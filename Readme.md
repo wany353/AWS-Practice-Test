@@ -52,10 +52,22 @@ public class Question {
     public string Analysis { get; set; } // 解析
 }
 
+```
+
 
 
 ## 6.目前的问题
+
 ### 改Bug
 修改题库上传代码，Content 为空
 ### 美化界面
 优化提示，加入提交按钮，看是对是错
+
+
+
+
+
+# 未来方向
+
+- [ ] 加入AI Agent，智能询问解答题目
+- [ ] 建立RAG，能够实时更新，实现RAG的增删功能
