@@ -1,27 +1,43 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
-import { Target, TrendingUp, Clock, AlertCircle, BookOpen } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Target, TrendingUp, Clock, AlertCircle, BookOpen, ArrowRight, XCircle, PlayCircle } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 
 export const Dashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [progress, setProgress] = useState(null);
+  const [wrongCount, setWrongCount] = useState(0);
 
   useEffect(() => {
-    const fetchHistory = async () => {
+    const fetchAll = async () => {
       try {
-        const { data } = await api.get('/Questions/test-history');
-        setHistory(data);
-      } catch (err) {
-        setError('无法获取测试记录');
+        const [historyRes, progressRes, wrongRes] = await Promise.allSettled([
+          api.get('/Questions/test-history'),
+          api.get('/PracticeProgress'),
+          api.get('/WrongAnswers/count')
+        ]);
+
+        if (historyRes.status === 'fulfilled') setHistory(historyRes.value.data);
+        else setError('无法获取测试记录');
+
+        if (progressRes.status === 'fulfilled') {
+          const p = progressRes.value.data;
+          const hasProgress = p.currentIndex > 0 ||
+            (p.answersJson && p.answersJson !== '{}' && p.answersJson !== 'null');
+          setProgress(hasProgress ? p : null);
+        }
+
+        if (wrongRes.status === 'fulfilled') setWrongCount(wrongRes.value.data.count || 0);
       } finally {
         setLoading(false);
       }
     };
-    fetchHistory();
+    fetchAll();
   }, []);
 
   const highestScore = history.length > 0 ? Math.max(...history.map(h => h.score)) : 0;
@@ -29,16 +45,27 @@ export const Dashboard = () => {
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 animate-fade-in-up">
+      {/* 主横幅 */}
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center py-6 bg-gray-900/50 backdrop-blur-md rounded-2xl p-8 border border-gray-800 shadow-xl">
         <div>
           <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">你好, {user?.username}</h1>
           <p className="text-gray-400">准备好继续你的 AWS 云认证学习之旅了吗？</p>
         </div>
-        <div className="mt-4 md:mt-0 flex gap-4">
-          <Link to="/practice" className="px-6 py-2.5 bg-gray-800 hover:bg-gray-700 text-white rounded-xl transition duration-300 font-medium flex items-center gap-2 border border-gray-700">
-            <BookOpen className="w-4 h-4 text-indigo-400" />
-            开始刷题
-          </Link>
+        <div className="mt-4 md:mt-0 flex gap-4 flex-wrap">
+          {progress ? (
+            <Link
+              to="/practice"
+              className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl transition duration-300 font-medium flex items-center gap-2 shadow-lg shadow-emerald-600/20"
+            >
+              <PlayCircle className="w-4 h-4" />
+              继续练习（第 {progress.currentIndex + 1} 题）
+            </Link>
+          ) : (
+            <Link to="/practice" className="px-6 py-2.5 bg-gray-800 hover:bg-gray-700 text-white rounded-xl transition duration-300 font-medium flex items-center gap-2 border border-gray-700">
+              <BookOpen className="w-4 h-4 text-indigo-400" />
+              开始刷题
+            </Link>
+          )}
           <Link to="/exam" className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition duration-300 font-medium flex items-center gap-2 shadow-lg shadow-indigo-600/20">
             <Target className="w-4 h-4" />
             全真模拟
@@ -46,7 +73,8 @@ export const Dashboard = () => {
         </div>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* 统计卡片 */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 shadow-lg flex items-center gap-4 hover:border-indigo-500/50 transition duration-300">
           <div className="w-14 h-14 rounded-full bg-indigo-500/10 flex items-center justify-center">
             <TrendingUp className="w-7 h-7 text-indigo-400" />
@@ -65,6 +93,19 @@ export const Dashboard = () => {
             <p className="text-2xl font-bold text-white">{highestScore}</p>
           </div>
         </div>
+        {/* 错题本快捷入口 */}
+        <Link
+          to="/wrong-answers"
+          className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 shadow-lg flex items-center gap-4 hover:border-red-500/50 transition duration-300 cursor-pointer"
+        >
+          <div className="w-14 h-14 rounded-full bg-red-500/10 flex items-center justify-center">
+            <XCircle className="w-7 h-7 text-red-400" />
+          </div>
+          <div>
+            <p className="text-sm text-gray-400 font-medium">错题本</p>
+            <p className="text-2xl font-bold text-white">{wrongCount} 道</p>
+          </div>
+        </Link>
         <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 shadow-lg flex items-center gap-4">
           <div className="w-14 h-14 rounded-full bg-orange-500/10 flex items-center justify-center">
             <Clock className="w-7 h-7 text-orange-400" />
@@ -76,6 +117,27 @@ export const Dashboard = () => {
         </div>
       </div>
 
+      {/* 练习进度横幅（有进度时显示） */}
+      {progress && (
+        <div className="bg-emerald-900/20 border border-emerald-500/30 rounded-2xl p-5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <PlayCircle className="w-6 h-6 text-emerald-400 flex-shrink-0" />
+            <div>
+              <p className="text-emerald-300 font-semibold">你有未完成的练习</p>
+              <p className="text-gray-400 text-sm">上次停在第 {progress.currentIndex + 1} 题，点击继续上次的进度。</p>
+            </div>
+          </div>
+          <Link
+            to="/practice"
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl transition font-medium text-sm"
+          >
+            继续
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+      )}
+
+      {/* 模考历史记录 */}
       <div className="bg-gray-900/50 border border-gray-800 rounded-2xl shadow-xl overflow-hidden">
         <div className="px-6 py-5 border-b border-gray-800">
           <h3 className="text-lg font-semibold text-white">答题历史记录</h3>

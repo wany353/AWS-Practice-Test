@@ -9,6 +9,7 @@ import { Dashboard } from './pages/Dashboard';
 import { PracticeMode } from './pages/PracticeMode';
 import { MockExam } from './pages/MockExam';
 import { Admin } from './pages/Admin';
+import { WrongAnswers } from './pages/WrongAnswers';
 
 const Home = () => (
   <div className="text-center mt-32 animate-fade-in-up">
@@ -37,6 +38,7 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/practice" element={<PracticeMode />} />
             <Route path="/exam" element={<MockExam />} />
+            <Route path="/wrong-answers" element={<WrongAnswers />} />
           </Route>
 
           {/* Admin Area */}

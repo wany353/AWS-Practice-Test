@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { BookOpen, User, LogOut, CheckSquare, Crown } from 'lucide-react';
+import { BookOpen, User, LogOut, CheckSquare, Crown, XCircle } from 'lucide-react';
 
 export const Navbar = () => {
   const { user, logout } = useAuth();
@@ -30,6 +30,9 @@ export const Navbar = () => {
                 </Link>
                 <Link to="/exam" className="text-gray-300 hover:text-white transition flex items-center gap-1 text-sm font-medium">
                   <BookOpen className="h-4 w-4" /> 模考
+                </Link>
+                <Link to="/wrong-answers" className="text-red-400 hover:text-red-300 transition flex items-center gap-1 text-sm font-medium">
+                  <XCircle className="h-4 w-4" /> 错题本
                 </Link>
                 {user.role === 'Admin' && (
                   <Link to="/admin" className="text-pink-400 hover:text-pink-300 transition flex items-center gap-1 text-sm font-medium">

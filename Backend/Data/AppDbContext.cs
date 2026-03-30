@@ -13,6 +13,8 @@ public class AppDbContext : DbContext
     public DbSet<Question> Questions { get; set; }
     public DbSet<Category> Categories { get; set; }
     public DbSet<TestRecord> TestRecords { get; set; }
+    public DbSet<UserPracticeProgress> PracticeProgresses { get; set; }
+    public DbSet<WrongAnswer> WrongAnswers { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -60,7 +60,7 @@ public class AuthController : ControllerBase
         var claims = new[]
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Username),
-            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim("uid", user.Id.ToString()), // 自定义 claim 存 ID，避免与 sub 映射冲突
             new Claim(ClaimTypes.Role, user.Role),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };

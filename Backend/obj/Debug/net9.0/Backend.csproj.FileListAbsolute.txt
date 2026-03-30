@@ -133,3 +133,4 @@ E:\AWS-Practice-Test\Backend\obj\Debug\net9.0\refint\Backend.dll
 E:\AWS-Practice-Test\Backend\obj\Debug\net9.0\Backend.pdb
 E:\AWS-Practice-Test\Backend\obj\Debug\net9.0\Backend.genruntimeconfig.cache
 E:\AWS-Practice-Test\Backend\obj\Debug\net9.0\ref\Backend.dll
+E:\AWS-Practice-Test\Backend\obj\Debug\net9.0\Backend.sourcelink.json

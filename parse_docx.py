@@ -38,7 +38,7 @@ def parse_questions(text):
             # ===== 选项 =====
             options = {}
             option_matches = re.findall(
-                r'([A-D])\.\s*(.*?)(?=\n[A-E]\.|$)',
+                r'([A-E])\.\s*(.*?)(?=\n[A-E]\.|$)',
                 block_clean,
                 re.S
             )
