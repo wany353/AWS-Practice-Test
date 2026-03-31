@@ -64,10 +64,32 @@ public class QuestionsController : ControllerBase
         }
     }
 
+    [HttpGet("{id}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetQuestion(int id)
+    {
+        var question = await _context.Questions.FindAsync(id);
+        if (question == null) return NotFound($"Question {id} not found.");
+        return Ok(question);
+    }
+
+    [HttpPatch("{id}/analysis")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> UpdateAnalysis(int id, [FromBody] UpdateAnalysisDto dto)
+    {
+        var question = await _context.Questions.FindAsync(id);
+        if (question == null) return NotFound($"Question {id} not found.");
+
+        question.Analysis = dto.Analysis;
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = $"Question {id} analysis updated successfully." });
+    }
+
     [HttpPost("submit-test")]
     public async Task<IActionResult> SubmitTest([FromBody] TestSubmitDto testSubmit)
     {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+        var userId = int.Parse(User.FindFirstValue("uid") ?? "0");
         if (userId <= 0) return Unauthorized();
 
         int score = 0;
@@ -98,7 +120,7 @@ public class QuestionsController : ControllerBase
     [HttpGet("test-history")]
     public async Task<IActionResult> GetTestHistory()
     {
-         var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+        var userId = int.Parse(User.FindFirstValue("uid") ?? "0");
         if (userId <= 0) return Unauthorized();
 
         var history = await _context.TestRecords

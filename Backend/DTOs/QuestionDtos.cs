@@ -1,5 +1,10 @@
 namespace Backend.DTOs;
 
+public class UpdateAnalysisDto
+{
+    public string? Analysis { get; set; }
+}
+
 public class QuestionImportDto
 {
     public int Id { get; set; }

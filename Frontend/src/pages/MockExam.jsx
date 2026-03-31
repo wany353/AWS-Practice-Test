@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
-import { Clock, AlertTriangle, UserCheck } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import remarkBreaks from 'remark-breaks';
+import { Clock, AlertTriangle, UserCheck, XOctagon, Trophy, Target, BarChart3, BookOpen } from 'lucide-react';
 
 export const MockExam = () => {
   const [questions, setQuestions] = useState([]);
@@ -132,19 +135,89 @@ export const MockExam = () => {
         </div>
       </div>
 
-      {scoreResult && (
-        <div className="mb-8 p-6 bg-gradient-to-r from-indigo-900/60 to-purple-900/60 border border-indigo-500/30 rounded-2xl shadow-2xl animate-fade-in-up text-center">
-          <UserCheck className="w-16 h-16 text-emerald-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-white mb-2">考试完成！</h2>
-          <p className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 mt-4 mb-6">
-            得分: {scoreResult.score} / {scoreResult.totalQuestions}
-          </p>
-          <div className="flex justify-center gap-4">
-            <button onClick={() => navigate('/practice')} className="px-5 py-2.5 bg-gray-800 hover:bg-gray-700 text-white rounded-xl transition">去练习模式复习</button>
-            <button onClick={() => navigate('/dashboard')} className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition shadow-lg shadow-indigo-500/30">返回面板</button>
+      {scoreResult && (() => {
+        const score = scoreResult.score;
+        const total = scoreResult.totalQuestions;
+        const percentage = total > 0 ? Math.round((score / total) * 100) : 0;
+        const passed = percentage >= 70;
+
+        return (
+          <div className={`mb-8 border rounded-2xl shadow-2xl animate-fade-in-up overflow-hidden ${
+            passed
+              ? 'bg-gradient-to-br from-emerald-900/40 via-gray-900/60 to-cyan-900/30 border-emerald-500/30'
+              : 'bg-gradient-to-br from-red-900/40 via-gray-900/60 to-orange-900/30 border-red-500/30'
+          }`}>
+            {/* 顶部结果 */}
+            <div className="p-8 text-center">
+              <div className={`w-20 h-20 rounded-full mx-auto mb-5 flex items-center justify-center ${
+                passed ? 'bg-emerald-500/20' : 'bg-red-500/20'
+              }`}>
+                {passed
+                  ? <Trophy className="w-10 h-10 text-emerald-400" />
+                  : <XOctagon className="w-10 h-10 text-red-400" />
+                }
+              </div>
+
+              <h2 className="text-2xl font-bold text-white mb-1">考试完成</h2>
+              <p className={`text-lg font-semibold mb-6 ${
+                passed ? 'text-emerald-400' : 'text-red-400'
+              }`}>
+                {passed ? '🎉 恭喜通过！' : '未能通过，继续加油！'}
+              </p>
+
+              {/* 分数展示 */}
+              <div className={`inline-block text-6xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r ${
+                passed
+                  ? 'from-emerald-400 to-cyan-400'
+                  : 'from-red-400 to-orange-400'
+              }`}>
+                {percentage}%
+              </div>
+              <p className="text-gray-400 text-sm mt-2">正确率</p>
+            </div>
+
+            {/* 统计栏 */}
+            <div className="border-t border-gray-800 bg-gray-900/40 px-8 py-5 grid grid-cols-3 gap-4">
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-1.5 text-gray-400 text-xs mb-1">
+                  <Target className="w-3.5 h-3.5" /> 总题数
+                </div>
+                <p className="text-xl font-bold text-white">{total}</p>
+              </div>
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-1.5 text-emerald-400 text-xs mb-1">
+                  <UserCheck className="w-3.5 h-3.5" /> 答对
+                </div>
+                <p className="text-xl font-bold text-emerald-400">{score}</p>
+              </div>
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-1.5 text-red-400 text-xs mb-1">
+                  <BarChart3 className="w-3.5 h-3.5" /> 答错
+                </div>
+                <p className="text-xl font-bold text-red-400">{total - score}</p>
+              </div>
+            </div>
+
+            {/* 通过标准提示 + 按钮 */}
+            <div className="border-t border-gray-800 px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <p className="text-xs text-gray-500">
+                通过标准：正确率 ≥ 70%
+                <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-semibold ${
+                  passed
+                    ? 'bg-emerald-500/20 text-emerald-400'
+                    : 'bg-red-500/20 text-red-400'
+                }`}>
+                  {passed ? 'PASSED' : 'FAILED'}
+                </span>
+              </p>
+              <div className="flex gap-3">
+                <button onClick={() => navigate('/practice')} className="px-5 py-2.5 bg-gray-800 hover:bg-gray-700 text-white rounded-xl transition text-sm">去练习复习</button>
+                <button onClick={() => navigate('/dashboard')} className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition shadow-lg shadow-indigo-500/30 text-sm">返回面板</button>
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Questions list */}
       <div className="space-y-12">
@@ -188,8 +261,20 @@ export const MockExam = () => {
             {submitted && (
               <div className="mt-6 pl-12">
                 <div className="p-4 bg-emerald-900/20 border border-emerald-500/30 rounded-xl">
-                  <span className="text-emerald-400 font-bold mb-1 block">正确答案: {q.answer}</span>
-                  <span className="text-gray-400 text-sm mt-2 block">{q.analysis}</span>
+                  <span className="text-emerald-400 font-bold mb-2 block">正确答案: {q.answer}</span>
+                  {q.analysis && (
+                    <div className="mt-2 prose prose-sm prose-invert max-w-none
+                      prose-p:text-gray-400 prose-p:leading-relaxed prose-p:my-1
+                      prose-strong:text-indigo-300
+                      prose-code:text-amber-300 prose-code:bg-gray-800 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs
+                      prose-ul:text-gray-400 prose-li:my-0.5
+                      prose-h2:text-gray-200 prose-h2:text-base prose-h3:text-gray-300 prose-h3:text-sm
+                      prose-blockquote:border-indigo-500 prose-blockquote:text-gray-500">
+                      <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
+                        {q.analysis}
+                      </ReactMarkdown>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

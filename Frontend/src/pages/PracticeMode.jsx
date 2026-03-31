@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '../utils/api';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import remarkBreaks from 'remark-breaks';
 import {
   ChevronLeft, ChevronRight, CheckCircle, XCircle,
   AlertCircle, BookOpen, ArrowRight, Loader2, PlayCircle,
@@ -42,7 +45,7 @@ const StartModal = ({ progress, onContinue, onRestart }) => {
             <BookOpen className="w-6 h-6 text-indigo-400" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-white">开始练习</h2>
+            <h2 className="text-xl font-bold text-white">欢迎回来</h2>
             <p className="text-gray-400 text-sm">请选择练习方式</p>
           </div>
         </div>
@@ -414,7 +417,7 @@ export const PracticeMode = () => {
                         <p className="font-bold text-red-400">回答错误，已记入错题本</p>
                         <p className="text-sm text-gray-400">
                           你的答案：<span className="text-red-300 font-mono">{(answers[currentIndex] || []).map(a => a.substring(0, 1)).sort().join(', ')}</span>
-                          　正确答案：<span className="text-emerald-300 font-mono">{currentQ.answer}</span>
+                          正确答案：<span className="text-emerald-300 font-mono">{currentQ.answer}</span>
                         </p>
                       </div>
                     </>
@@ -423,9 +426,25 @@ export const PracticeMode = () => {
 
                 {/* 解析 */}
                 {currentQ.analysis && (
-                  <div className="p-5 bg-indigo-900/20 border border-indigo-500/30 rounded-xl text-gray-300 leading-relaxed text-sm">
-                    <h4 className="font-bold text-indigo-400 mb-2">详细解析：</h4>
-                    {currentQ.analysis}
+                  <div className="p-5 bg-indigo-900/20 border border-indigo-500/30 rounded-xl text-sm">
+                    <h4 className="font-bold text-indigo-400 mb-3 flex items-center gap-2">
+                      <BookOpen className="w-4 h-4" />
+                      详细解析
+                    </h4>
+                    <div className="prose prose-sm prose-invert max-w-none
+                      prose-p:text-gray-300 prose-p:leading-relaxed prose-p:my-1
+                      prose-strong:text-indigo-300 prose-strong:font-semibold
+                      prose-code:text-amber-300 prose-code:bg-gray-800 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-xs
+                      prose-pre:bg-gray-800/80 prose-pre:border prose-pre:border-gray-700 prose-pre:rounded-lg
+                      prose-ul:text-gray-300 prose-ul:my-1 prose-li:my-0.5
+                      prose-ol:text-gray-300 prose-ol:my-1
+                      prose-h1:text-white prose-h2:text-white prose-h3:text-gray-200
+                      prose-blockquote:border-indigo-500 prose-blockquote:text-gray-400
+                      prose-a:text-indigo-400 prose-a:no-underline hover:prose-a:underline">
+                      <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
+                        {currentQ.analysis}
+                      </ReactMarkdown>
+                    </div>
                   </div>
                 )}
 
@@ -469,15 +488,14 @@ export const PracticeMode = () => {
             return (
               <div
                 key={idx}
-                className={`flex-1 rounded-full transition-colors cursor-pointer ${
-                  idx === currentIndex
+                className={`flex-1 rounded-full transition-colors cursor-pointer ${idx === currentIndex
                     ? 'bg-indigo-500'
                     : !isDone
                       ? 'bg-gray-800 hover:bg-gray-700'
                       : isRight
                         ? 'bg-emerald-500/60 hover:bg-emerald-500'
                         : 'bg-red-500/60 hover:bg-red-500'
-                }`}
+                  }`}
                 onClick={() => setCurrentIndex(idx)}
                 title={`第 ${idx + 1} 题`}
               />
