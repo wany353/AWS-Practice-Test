@@ -24,7 +24,8 @@ const Home = () => (
 
 function App() {
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-50 font-sans selection:bg-indigo-500/30">
+    <div className="min-h-screen text-cq-ink font-sans selection:bg-cq-amber/30">
+      <div className="cq-backdrop" />
       <Navbar />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Routes>
