@@ -50,7 +50,7 @@ export const WrongAnswers = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center py-20 min-h-[60vh]">
-        <Loader2 className="animate-spin w-12 h-12 text-indigo-500" />
+        <Loader2 className="animate-spin w-12 h-12 text-cq-amber" />
       </div>
     );
   }
@@ -60,14 +60,14 @@ export const WrongAnswers = () => {
       {/* 标题栏 */}
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">错题本</h1>
-          <p className="text-gray-400 mt-1">
+          <h1 className="font-display text-3xl font-bold text-cq-ink tracking-tight">错题本</h1>
+          <p className="text-cq-sub mt-1">
             共 <span className="text-red-400 font-semibold">{wrongList.length}</span> 道错题
           </p>
         </div>
         <button
           onClick={fetchWrongAnswers}
-          className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl transition"
+          className="flex items-center gap-2 px-4 py-2 bg-cq-panel hover:bg-cq-panel/70 text-cq-sub rounded-xl transition"
         >
           <RefreshCw className="w-4 h-4" />
           刷新
@@ -86,11 +86,11 @@ export const WrongAnswers = () => {
           <div className="w-20 h-20 rounded-full bg-emerald-500/10 flex items-center justify-center mb-4">
             <CheckCircle className="w-10 h-10 text-emerald-400" />
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2">错题本是空的！</h2>
-          <p className="text-gray-400 mb-6">你目前没有做错的题目，继续保持！</p>
+          <h2 className="font-display text-2xl font-bold text-cq-ink mb-2">错题本是空的！</h2>
+          <p className="text-cq-sub mb-6">你目前没有做错的题目，继续保持！</p>
           <Link
             to="/practice"
-            className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition font-medium flex items-center gap-2"
+            className="px-6 py-2.5 bg-gradient-to-br from-cq-coral to-cq-amber text-cq-on-accent rounded-xl transition font-semibold flex items-center gap-2 shadow-cq-accent hover:brightness-110"
           >
             <BookOpen className="w-4 h-4" />
             去练习
@@ -103,7 +103,7 @@ export const WrongAnswers = () => {
             return (
               <div
                 key={item.id}
-                className="bg-gray-900/60 backdrop-blur-xl border border-red-500/20 rounded-2xl overflow-hidden shadow-lg transition hover:border-red-500/40"
+                className="bg-cq-surface/90 backdrop-blur-xl border border-red-500/20 rounded-2xl overflow-hidden shadow-cq-card transition hover:border-red-500/40"
               >
                 {/* 题目头部：可折叠 */}
                 <button
@@ -115,23 +115,23 @@ export const WrongAnswers = () => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs px-2 py-0.5 bg-gray-800 text-gray-400 rounded-full">
+                      <span className="text-xs px-2 py-0.5 bg-cq-panel text-cq-sub rounded-full font-mono">
                         {item.questionType}
                       </span>
-                      <span className="text-xs text-gray-600">#{idx + 1}</span>
+                      <span className="text-xs text-cq-faint font-mono">#{idx + 1}</span>
                     </div>
-                    <p className="text-gray-200 text-sm leading-relaxed line-clamp-2 whitespace-pre-wrap">
+                    <p className="text-cq-ink text-sm leading-relaxed line-clamp-2 whitespace-pre-wrap">
                       {item.questionContent}
                     </p>
                   </div>
-                  <div className="flex-shrink-0 ml-2 mt-1 text-gray-500">
+                  <div className="flex-shrink-0 ml-2 mt-1 text-cq-faint">
                     {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                   </div>
                 </button>
 
                 {/* 展开详情 */}
                 {isExpanded && (
-                  <div className="px-5 pb-5 space-y-4 border-t border-gray-800 pt-4">
+                  <div className="px-5 pb-5 space-y-4 border-t border-cq-line pt-4">
                     {/* 选项列表 */}
                     <div className="space-y-2">
                       {item.options.map((opt, oidx) => {
@@ -145,7 +145,7 @@ export const WrongAnswers = () => {
                                 ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-200'
                                 : isUserSelected
                                   ? 'bg-red-500/10 border-red-500/30 text-red-200'
-                                  : 'bg-gray-800/30 border-gray-700/50 text-gray-500'
+                                  : 'bg-cq-panel/30 border-cq-line text-cq-faint'
                             }`}
                           >
                             <span className="flex-shrink-0">
@@ -160,19 +160,19 @@ export const WrongAnswers = () => {
                     {/* 答案对比 */}
                     <div className="flex gap-4 text-sm">
                       <div className="flex items-center gap-2">
-                        <span className="text-gray-400">我的答案：</span>
+                        <span className="text-cq-sub">我的答案：</span>
                         <span className="font-mono text-red-400">{item.userAnswer.map(a => a.substring(0, 1)).join(', ')}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-gray-400">正确答案：</span>
+                        <span className="text-cq-sub">正确答案：</span>
                         <span className="font-mono text-emerald-400">{item.answer}</span>
                       </div>
                     </div>
 
                     {/* 解析 */}
                     {item.analysis && (
-                      <div className="p-4 bg-indigo-900/20 border border-indigo-500/30 rounded-xl text-gray-300 text-sm leading-relaxed">
-                        <h4 className="font-bold text-indigo-400 mb-1">解析：</h4>
+                      <div className="p-4 bg-cq-surface border border-cq-line rounded-xl text-cq-sub text-sm leading-relaxed">
+                        <h4 className="font-bold text-cq-amber mb-1">解析：</h4>
                         {item.analysis}
                       </div>
                     )}
