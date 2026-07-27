@@ -2,6 +2,7 @@ import typography from '@tailwindcss/typography';
 
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: ['selector', '[data-theme="dark"]'],
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -10,17 +11,31 @@ export default {
     extend: {
       colors: {
         cq: {
-          bg: '#17100A',
-          surface: '#1C140C',
-          panel: '#211812',
-          ink: '#F5EEE3',
-          sub: '#AC9C86',
-          faint: '#8B7C67',
-          line: 'rgba(255,255,255,0.08)',
-          coral: '#FF6B4A',
-          amber: '#FF8A3D',
-          gold: '#FFC98A',
-          'on-accent': '#2A1608',
+          bg: 'var(--cq-bg)',
+          bg2: 'var(--cq-bg2)',
+          panel: 'var(--cq-panel)',
+          panel2: 'var(--cq-panel2)',
+          card: 'var(--cq-card)',
+          surface: 'var(--cq-surface)',
+          line: 'var(--cq-line)',
+          line2: 'var(--cq-line2)',
+          ink: 'var(--cq-ink)',
+          sub: 'var(--cq-sub)',
+          faint: 'var(--cq-faint)',
+          nav: 'var(--cq-nav)',
+          acc: 'var(--cq-acc)',
+          acc2: 'var(--cq-acc2)',
+          'acc-soft': 'var(--cq-acc-soft)',
+          'on-accent': 'var(--cq-on-accent)',
+          // gradient aliases (from-cq-coral → to-cq-amber)
+          coral: 'var(--cq-acc)',
+          amber: 'var(--cq-acc2)',
+          ok: 'var(--cq-ok)',
+          'ok-soft': 'var(--cq-ok-soft)',
+          bad: 'var(--cq-bad)',
+          'bad-soft': 'var(--cq-bad-soft)',
+          gold: 'var(--cq-gold)',
+          'gold-soft': 'var(--cq-gold-soft)',
         },
       },
       fontFamily: {
@@ -29,8 +44,8 @@ export default {
         mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'monospace'],
       },
       boxShadow: {
-        'cq-accent': '0 12px 28px rgba(255,107,74,0.40)',
-        'cq-card': '0 12px 40px rgba(0,0,0,0.35)',
+        'cq-accent': '0 10px 22px var(--cq-acc-soft)',
+        'cq-card': 'var(--cq-shadow)',
       },
       keyframes: {
         fadeIn: {

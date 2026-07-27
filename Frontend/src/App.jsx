@@ -17,8 +17,8 @@ const Home = () => (
     {/* Hero */}
     <div className="grid lg:grid-cols-[1.08fr_.92fr] gap-11 items-center pt-10 pb-6">
       <div>
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cq-amber/10 border border-cq-amber/25 text-cq-gold font-mono text-xs tracking-wide mb-6">
-          <span className="w-1.5 h-1.5 rounded-full bg-cq-amber shadow-[0_0_10px_#FF8A3D]" />
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cq-acc-soft border border-cq-acc text-cq-gold font-mono text-xs tracking-wide mb-6">
+          <span className="w-1.5 h-1.5 rounded-full bg-cq-acc shadow-[0_0_10px_#FF8A3D]" />
           AWS 认证 · 智能刷题系统
         </div>
         <h1 className="font-display font-bold text-5xl md:text-6xl leading-[1.05] tracking-tight mb-3">
@@ -37,18 +37,18 @@ const Home = () => (
             立即开始刷题 Start now
             <ArrowRight className="w-4 h-4" />
           </Link>
-          <Link to="/practice" className="inline-flex items-center gap-2 font-semibold px-6 py-3.5 rounded-xl border border-cq-line bg-white/[.03] text-cq-ink hover:bg-white/[.06] transition">
+          <Link to="/practice" className="inline-flex items-center gap-2 font-semibold px-6 py-3.5 rounded-xl border border-cq-line bg-cq-panel text-cq-ink hover:bg-cq-panel2 transition">
             查看题库 Browse bank
           </Link>
         </div>
         <div className="flex gap-8">
           <div>
-            <div className="font-mono font-bold text-2xl text-cq-ink">1,200<span className="text-cq-amber">+</span></div>
+            <div className="font-mono font-bold text-2xl text-cq-ink">1,200<span className="text-cq-acc">+</span></div>
             <div className="text-xs font-semibold text-cq-faint">真题 Questions</div>
           </div>
           <div className="w-px bg-cq-line" />
           <div>
-            <div className="font-mono font-bold text-2xl text-cq-ink">65<span className="text-cq-amber"> 题</span></div>
+            <div className="font-mono font-bold text-2xl text-cq-ink">65<span className="text-cq-acc"> 题</span></div>
             <div className="text-xs font-semibold text-cq-faint">全真模考 Mock</div>
           </div>
         </div>
@@ -56,8 +56,8 @@ const Home = () => (
 
       {/* 真题预览卡 */}
       <div className="relative animate-float">
-        <div className="absolute -inset-px rounded-3xl bg-gradient-to-br from-cq-coral/50 via-cq-amber/35 to-transparent blur-[1px]" />
-        <div className="relative bg-cq-surface/90 backdrop-blur border border-cq-line rounded-[22px] p-6 shadow-cq-card">
+        <div className="absolute -inset-px rounded-3xl bg-gradient-to-br from-cq-coral via-cq-amber to-transparent opacity-50 blur-[1px]" />
+        <div className="relative bg-cq-surface backdrop-blur border border-cq-line rounded-[22px] p-6 shadow-cq-card">
           <div className="flex items-center justify-between mb-4">
             <span className="text-[11px] font-extrabold tracking-wide px-2.5 py-1 rounded-full bg-gradient-to-br from-cq-coral to-cq-amber text-cq-on-accent">单选题 · SINGLE</span>
             <span className="font-mono text-[11px] text-cq-faint">真题预览 · SAMPLE</span>
@@ -74,8 +74,8 @@ const Home = () => (
             ].map((o) => (
               <div key={o.k} className={`flex items-center gap-3 px-3.5 py-3 rounded-xl border text-sm ${
                 o.correct
-                  ? 'bg-cq-amber/12 border-cq-amber text-cq-ink font-semibold'
-                  : 'bg-white/[.04] border-cq-line text-cq-sub'
+                  ? 'bg-cq-acc-soft border-cq-acc text-cq-ink font-semibold'
+                  : 'bg-cq-panel border-cq-line text-cq-sub'
               }`}>
                 <span className={`w-6 h-6 shrink-0 rounded-full flex items-center justify-center font-mono text-xs ${
                   o.correct
@@ -89,7 +89,7 @@ const Home = () => (
             ))}
           </div>
           <div className="mt-4 pt-3.5 border-t border-cq-line flex items-center gap-2 text-xs text-cq-sub font-semibold">
-            <BookmarkX className="w-4 h-4 text-cq-amber" />
+            <BookmarkX className="w-4 h-4 text-cq-acc" />
             答题后即可查看逐题深度解析 · Deep explanation after you answer
           </div>
         </div>
@@ -104,8 +104,8 @@ const Home = () => (
         { Icon: Target, t: '全真模考', d: '65 题 · 60 分 · 70% 过' },
         { Icon: BookmarkX, t: '错题本', d: '自动收集 · 反复攻克' },
       ].map(({ Icon, t, d }) => (
-        <div key={t} className="bg-cq-surface/90 border border-cq-line rounded-2xl p-5">
-          <Icon className="w-6 h-6 text-cq-amber" strokeWidth={1.9} />
+        <div key={t} className="bg-cq-surface border border-cq-line rounded-2xl p-5">
+          <Icon className="w-6 h-6 text-cq-acc" strokeWidth={1.9} />
           <div className="font-display font-bold text-base mt-3 mb-1">{t}</div>
           <div className="text-xs font-semibold text-cq-faint">{d}</div>
         </div>
@@ -116,7 +116,7 @@ const Home = () => (
 
 function App() {
   return (
-    <div className="min-h-screen text-cq-ink font-sans selection:bg-cq-amber/30">
+    <div className="min-h-screen text-cq-ink font-sans selection:bg-cq-acc-soft">
       <div className="cq-backdrop" />
       <Navbar />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

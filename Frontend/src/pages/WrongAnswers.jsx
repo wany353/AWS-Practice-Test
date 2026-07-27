@@ -50,7 +50,7 @@ export const WrongAnswers = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center py-20 min-h-[60vh]">
-        <Loader2 className="animate-spin w-12 h-12 text-cq-amber" />
+        <Loader2 className="animate-spin w-12 h-12 text-cq-acc" />
       </div>
     );
   }
@@ -62,12 +62,12 @@ export const WrongAnswers = () => {
         <div>
           <h1 className="font-display text-3xl font-bold text-cq-ink tracking-tight">错题本</h1>
           <p className="text-cq-sub mt-1">
-            共 <span className="text-red-400 font-semibold">{wrongList.length}</span> 道错题
+            共 <span className="text-cq-bad font-semibold">{wrongList.length}</span> 道错题
           </p>
         </div>
         <button
           onClick={fetchWrongAnswers}
-          className="flex items-center gap-2 px-4 py-2 bg-cq-panel hover:bg-cq-panel/70 text-cq-sub rounded-xl transition"
+          className="flex items-center gap-2 px-4 py-2 bg-cq-panel hover:bg-cq-panel2 text-cq-sub rounded-xl transition"
         >
           <RefreshCw className="w-4 h-4" />
           刷新
@@ -75,7 +75,7 @@ export const WrongAnswers = () => {
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 text-red-400 bg-red-400/10 p-4 rounded-xl mb-6">
+        <div className="flex items-center gap-2 text-cq-bad bg-cq-bad-soft p-4 rounded-xl mb-6">
           <AlertCircle className="w-5 h-5" />
           {error}
         </div>
@@ -83,8 +83,8 @@ export const WrongAnswers = () => {
 
       {wrongList.length === 0 && !error ? (
         <div className="flex flex-col items-center justify-center py-24 text-center">
-          <div className="w-20 h-20 rounded-full bg-emerald-500/10 flex items-center justify-center mb-4">
-            <CheckCircle className="w-10 h-10 text-emerald-400" />
+          <div className="w-20 h-20 rounded-full bg-cq-ok-soft flex items-center justify-center mb-4">
+            <CheckCircle className="w-10 h-10 text-cq-ok" />
           </div>
           <h2 className="font-display text-2xl font-bold text-cq-ink mb-2">错题本是空的！</h2>
           <p className="text-cq-sub mb-6">你目前没有做错的题目，继续保持！</p>
@@ -103,15 +103,15 @@ export const WrongAnswers = () => {
             return (
               <div
                 key={item.id}
-                className="bg-cq-surface/90 backdrop-blur-xl border border-red-500/20 rounded-2xl overflow-hidden shadow-cq-card transition hover:border-red-500/40"
+                className="bg-cq-surface backdrop-blur-xl border border-cq-bad rounded-2xl overflow-hidden shadow-cq-card transition hover:border-cq-bad"
               >
                 {/* 题目头部：可折叠 */}
                 <button
                   onClick={() => toggleExpand(item.id)}
                   className="w-full flex items-start gap-4 p-5 text-left"
                 >
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center mt-0.5">
-                    <XCircle className="w-4 h-4 text-red-400" />
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-cq-bad-soft flex items-center justify-center mt-0.5">
+                    <XCircle className="w-4 h-4 text-cq-bad" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
@@ -142,10 +142,10 @@ export const WrongAnswers = () => {
                             key={oidx}
                             className={`p-3 rounded-xl text-sm border flex items-center gap-3 ${
                               isCorrect
-                                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-200'
+                                ? 'bg-cq-ok-soft border-cq-ok text-cq-ok'
                                 : isUserSelected
-                                  ? 'bg-red-500/10 border-red-500/30 text-red-200'
-                                  : 'bg-cq-panel/30 border-cq-line text-cq-faint'
+                                  ? 'bg-cq-bad-soft border-cq-bad text-cq-bad'
+                                  : 'bg-cq-panel border-cq-line text-cq-faint'
                             }`}
                           >
                             <span className="flex-shrink-0">
@@ -161,18 +161,18 @@ export const WrongAnswers = () => {
                     <div className="flex gap-4 text-sm">
                       <div className="flex items-center gap-2">
                         <span className="text-cq-sub">我的答案：</span>
-                        <span className="font-mono text-red-400">{item.userAnswer.map(a => a.substring(0, 1)).join(', ')}</span>
+                        <span className="font-mono text-cq-bad">{item.userAnswer.map(a => a.substring(0, 1)).join(', ')}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-cq-sub">正确答案：</span>
-                        <span className="font-mono text-emerald-400">{item.answer}</span>
+                        <span className="font-mono text-cq-ok">{item.answer}</span>
                       </div>
                     </div>
 
                     {/* 解析 */}
                     {item.analysis && (
                       <div className="p-4 bg-cq-surface border border-cq-line rounded-xl text-cq-sub text-sm leading-relaxed">
-                        <h4 className="font-bold text-cq-amber mb-1">解析：</h4>
+                        <h4 className="font-bold text-cq-acc mb-1">解析：</h4>
                         {item.analysis}
                       </div>
                     )}
@@ -182,7 +182,7 @@ export const WrongAnswers = () => {
                       <button
                         onClick={() => handleRemove(item.questionId)}
                         disabled={removing[item.questionId]}
-                        className="flex items-center gap-2 px-4 py-2 text-sm bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition disabled:opacity-50"
+                        className="flex items-center gap-2 px-4 py-2 text-sm bg-cq-bad-soft hover:bg-cq-bad-soft text-cq-bad rounded-xl transition disabled:opacity-50"
                       >
                         {removing[item.questionId]
                           ? <Loader2 className="w-4 h-4 animate-spin" />

@@ -74,16 +74,16 @@ const UploadSection = () => {
   };
 
   return (
-    <div className="bg-cq-surface/90 backdrop-blur-md border border-cq-line rounded-3xl p-8 sm:p-10 shadow-cq-card relative overflow-hidden text-center">
-      <div className="absolute top-0 right-0 w-64 h-64 bg-cq-coral/10 rounded-full filter blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-64 h-64 bg-cq-amber/10 rounded-full filter blur-3xl translate-y-1/2 -translate-x-1/2 pointer-events-none" />
+    <div className="bg-cq-surface backdrop-blur-md border border-cq-line rounded-3xl p-8 sm:p-10 shadow-cq-card relative overflow-hidden text-center">
+      <div className="absolute top-0 right-0 w-64 h-64 bg-cq-acc-soft rounded-full filter blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-64 h-64 bg-cq-acc-soft rounded-full filter blur-3xl translate-y-1/2 -translate-x-1/2 pointer-events-none" />
       <div className="relative z-10">
-        <UploadCloud className="w-16 h-16 text-cq-amber mx-auto mb-4" />
+        <UploadCloud className="w-16 h-16 text-cq-acc mx-auto mb-4" />
         <h2 className="font-display text-2xl font-bold text-cq-ink mb-2">上传题库</h2>
         <p className="text-cq-sub mb-8 max-w-xl mx-auto text-sm">
-          请上传结构化 <code className="text-cq-amber bg-cq-amber/10 px-1.5 py-0.5 rounded font-mono">aws_questions.json</code> 题库文件。原有题库将被清空并替换。
+          请上传结构化 <code className="text-cq-acc bg-cq-acc-soft px-1.5 py-0.5 rounded font-mono">aws_questions.json</code> 题库文件。原有题库将被清空并替换。
         </p>
-        <div className="bg-cq-panel/50 border-2 border-dashed border-cq-line rounded-2xl p-8 transition-all hover:border-cq-amber hover:bg-cq-amber/5 group relative cursor-pointer mb-6">
+        <div className="bg-cq-panel border-2 border-dashed border-cq-line rounded-2xl p-8 transition-all hover:border-cq-acc hover:bg-cq-acc-soft group relative cursor-pointer mb-6">
           <input
             type="file"
             accept=".json"
@@ -91,7 +91,7 @@ const UploadSection = () => {
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
           />
           <div className="pointer-events-none">
-            <p className="text-base font-medium text-cq-sub group-hover:text-cq-amber">
+            <p className="text-base font-medium text-cq-sub group-hover:text-cq-acc">
               {fileName ? fileName : '点击或拖拽上传 JSON 文件'}
             </p>
             {!fileName && <p className="text-sm text-cq-faint mt-1">支持 .json 格式</p>}
@@ -108,8 +108,8 @@ const UploadSection = () => {
         {status && (
           <div className={`mt-6 p-4 rounded-xl border flex items-start gap-3 text-left ${
             status.type === 'success'
-              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-              : 'bg-red-500/10 border-red-500/30 text-red-400'
+              ? 'bg-cq-ok-soft border-cq-ok text-cq-ok'
+              : 'bg-cq-bad-soft border-cq-bad text-cq-bad'
           }`}>
             {status.type === 'success' ? <CheckCircle className="w-5 h-5 shrink-0 mt-0.5" /> : <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />}
             <div>
@@ -186,7 +186,7 @@ const AnalysisManager = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center py-16">
-        <Loader className="animate-spin w-8 h-8 text-cq-amber" />
+        <Loader className="animate-spin w-8 h-8 text-cq-acc" />
         <span className="ml-3 text-cq-sub">加载题目列表...</span>
       </div>
     );
@@ -208,8 +208,8 @@ const AnalysisManager = () => {
         <div className="flex items-center gap-4 text-sm text-cq-sub">
           <span>共 <span className="text-cq-ink font-semibold font-mono">{questions.length}</span> 题</span>
           <span className="flex items-center gap-1.5">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-            已有解析 <span className="text-emerald-400 font-semibold">{questions.filter(q => hasRealAnalysis(q.analysis)).length}</span>
+            <CheckCircle2 className="w-4 h-4 text-cq-ok" />
+            已有解析 <span className="text-cq-ok font-semibold">{questions.filter(q => hasRealAnalysis(q.analysis)).length}</span>
           </span>
           <span className="flex items-center gap-1.5">
             <Circle className="w-4 h-4 text-cq-faint" />
@@ -221,7 +221,7 @@ const AnalysisManager = () => {
           <button
             onClick={() => setPage(p => Math.max(0, p - 1))}
             disabled={page === 0}
-            className="p-1.5 rounded-lg bg-cq-panel hover:bg-cq-panel/70 disabled:opacity-30 disabled:cursor-not-allowed text-cq-sub transition"
+            className="p-1.5 rounded-lg bg-cq-panel hover:bg-cq-panel2 disabled:opacity-30 disabled:cursor-not-allowed text-cq-sub transition"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -231,7 +231,7 @@ const AnalysisManager = () => {
           <button
             onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
             disabled={page >= totalPages - 1}
-            className="p-1.5 rounded-lg bg-cq-panel hover:bg-cq-panel/70 disabled:opacity-30 disabled:cursor-not-allowed text-cq-sub transition"
+            className="p-1.5 rounded-lg bg-cq-panel hover:bg-cq-panel2 disabled:opacity-30 disabled:cursor-not-allowed text-cq-sub transition"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -250,8 +250,8 @@ const AnalysisManager = () => {
               key={q.id}
               className={`rounded-2xl border transition-all duration-300 overflow-hidden ${
                 isEditing
-                  ? 'border-cq-amber/60 bg-cq-amber/5'
-                  : 'border-cq-line bg-cq-surface/60 hover:border-cq-faint'
+                  ? 'border-cq-acc bg-cq-acc-soft'
+                  : 'border-cq-line bg-cq-panel hover:border-cq-faint'
               }`}
             >
               {/* 题目头 */}
@@ -259,7 +259,7 @@ const AnalysisManager = () => {
                 {/* 序号 + 状态点 */}
                 <div className="flex flex-col items-center gap-1 flex-shrink-0 pt-0.5">
                   <span className="text-xs font-mono text-cq-faint leading-none">#{q.id}</span>
-                  <div className={`w-2 h-2 rounded-full mt-1 ${hasAnalysis ? 'bg-emerald-400' : 'bg-cq-faint'}`}
+                  <div className={`w-2 h-2 rounded-full mt-1 ${hasAnalysis ? 'bg-cq-ok' : 'bg-cq-faint'}`}
                     title={hasAnalysis ? '已有解析' : '暂无解析'} />
                 </div>
 
@@ -270,7 +270,7 @@ const AnalysisManager = () => {
                     <span className="text-xs px-2 py-0.5 rounded bg-cq-panel text-cq-faint font-mono">{q.type}</span>
                     <span className="text-xs text-cq-faint">答案：<span className="font-mono text-cq-sub">{q.answer}</span></span>
                     {hasAnalysis
-                      ? <span className="text-xs text-emerald-500 flex items-center gap-0.5"><CheckCircle2 className="w-3 h-3" /> 已有解析</span>
+                      ? <span className="text-xs text-cq-ok flex items-center gap-0.5"><CheckCircle2 className="w-3 h-3" /> 已有解析</span>
                       : <span className="text-xs text-cq-faint">暂无解析</span>
                     }
                   </div>
@@ -279,19 +279,19 @@ const AnalysisManager = () => {
                 {/* 操作按钮 */}
                 <div className="flex-shrink-0 flex items-center gap-2">
                   {status === 'success' && (
-                    <span className="text-xs text-emerald-400 flex items-center gap-1 animate-fade-in">
+                    <span className="text-xs text-cq-ok flex items-center gap-1 animate-fade-in">
                       <CheckCircle className="w-3.5 h-3.5" /> 已保存
                     </span>
                   )}
                   {status === 'error' && (
-                    <span className="text-xs text-red-400 flex items-center gap-1 animate-fade-in">
+                    <span className="text-xs text-cq-bad flex items-center gap-1 animate-fade-in">
                       <AlertCircle className="w-3.5 h-3.5" /> 保存失败
                     </span>
                   )}
                   {!isEditing ? (
                     <button
                       onClick={() => startEdit(q)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-cq-amber/15 hover:bg-cq-amber/25 text-cq-amber border border-cq-amber/30 transition"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-cq-acc-soft hover:bg-cq-acc-soft text-cq-acc border border-cq-acc transition"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
                       {hasAnalysis ? '编辑解析' : '添加解析'}
@@ -299,7 +299,7 @@ const AnalysisManager = () => {
                   ) : (
                     <button
                       onClick={cancelEdit}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-cq-panel hover:bg-cq-panel/70 text-cq-sub transition"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-cq-panel hover:bg-cq-panel2 text-cq-sub transition"
                     >
                       <X className="w-3.5 h-3.5" /> 取消
                     </button>
@@ -317,7 +317,7 @@ const AnalysisManager = () => {
                     </span>
                     <button
                       onClick={() => setPreview(v => !v)}
-                      className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg bg-cq-panel hover:bg-cq-panel/70 text-cq-sub transition"
+                      className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg bg-cq-panel hover:bg-cq-panel2 text-cq-sub transition"
                     >
                       <BookOpen className="w-3.5 h-3.5" />
                       {preview ? '返回编辑' : '预览'}
@@ -330,20 +330,20 @@ const AnalysisManager = () => {
                       onChange={e => setEditContent(e.target.value)}
                       rows={10}
                       placeholder={`在此输入 Markdown 格式的解析内容...\n\n例如：\n## 解析思路\n\n正确答案是 **A**，原因如下：\n\n- AWS S3 是对象存储服务\n- 适合存储静态文件\n\n> 参考：AWS 官方文档`}
-                      className="w-full bg-cq-panel border border-cq-line rounded-xl px-4 py-3 text-sm text-cq-ink placeholder-cq-faint focus:outline-none focus:border-cq-amber focus:ring-1 focus:ring-cq-amber/50 resize-none font-mono leading-relaxed transition"
+                      className="w-full bg-cq-panel border border-cq-line rounded-xl px-4 py-3 text-sm text-cq-ink placeholder-cq-faint focus:outline-none focus:border-cq-acc focus:ring-1 focus:ring-cq-acc resize-none font-mono leading-relaxed transition"
                     />
                   ) : (
-                    <div className="bg-cq-panel/40 border border-cq-line rounded-xl px-5 py-4 min-h-[200px]">
+                    <div className="bg-cq-panel border border-cq-line rounded-xl px-5 py-4 min-h-[200px]">
                       {editContent ? (
                         <div className="prose prose-sm prose-invert max-w-none
                           prose-p:text-cq-sub prose-p:leading-relaxed prose-p:my-1
-                          prose-strong:text-cq-amber prose-strong:font-semibold
-                          prose-code:text-amber-300 prose-code:bg-cq-bg prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-xs
+                          prose-strong:text-cq-acc prose-strong:font-semibold
+                          prose-code:text-cq-gold prose-code:bg-cq-bg prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-xs
                           prose-pre:bg-cq-bg prose-pre:border prose-pre:border-cq-line prose-pre:rounded-lg
                           prose-ul:text-cq-sub prose-li:my-0.5
                           prose-ol:text-cq-sub
                           prose-h2:text-cq-ink prose-h3:text-cq-ink
-                          prose-blockquote:border-cq-amber prose-blockquote:text-cq-sub">
+                          prose-blockquote:border-cq-acc prose-blockquote:text-cq-sub">
                           <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
                             {editContent}
                           </ReactMarkdown>
@@ -379,7 +379,7 @@ const AnalysisManager = () => {
           <button
             onClick={() => { setPage(p => Math.max(0, p - 1)); setEditingId(null); }}
             disabled={page === 0}
-            className="flex items-center gap-1 px-4 py-2 rounded-lg text-sm bg-cq-panel hover:bg-cq-panel/70 disabled:opacity-30 text-cq-sub transition"
+            className="flex items-center gap-1 px-4 py-2 rounded-lg text-sm bg-cq-panel hover:bg-cq-panel2 disabled:opacity-30 text-cq-sub transition"
           >
             <ChevronLeft className="w-4 h-4" /> 上一页
           </button>
@@ -387,7 +387,7 @@ const AnalysisManager = () => {
           <button
             onClick={() => { setPage(p => Math.min(totalPages - 1, p + 1)); setEditingId(null); }}
             disabled={page >= totalPages - 1}
-            className="flex items-center gap-1 px-4 py-2 rounded-lg text-sm bg-cq-panel hover:bg-cq-panel/70 disabled:opacity-30 text-cq-sub transition"
+            className="flex items-center gap-1 px-4 py-2 rounded-lg text-sm bg-cq-panel hover:bg-cq-panel2 disabled:opacity-30 text-cq-sub transition"
           >
             下一页 <ChevronRight className="w-4 h-4" />
           </button>
@@ -409,13 +409,13 @@ export const Admin = () => {
       </div>
 
       {/* 标签页导航 */}
-      <div className="flex gap-2 mb-6 bg-cq-surface/90 border border-cq-line rounded-2xl p-1.5">
+      <div className="flex gap-2 mb-6 bg-cq-surface border border-cq-line rounded-2xl p-1.5">
         <button
           onClick={() => setActiveTab('analysis')}
           className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all duration-200 ${
             activeTab === 'analysis'
               ? 'bg-gradient-to-br from-cq-coral to-cq-amber text-cq-on-accent shadow-cq-accent'
-              : 'text-cq-sub hover:text-cq-ink hover:bg-cq-panel/60'
+              : 'text-cq-sub hover:text-cq-ink hover:bg-cq-panel'
           }`}
         >
           <BookOpen className="w-4 h-4" />
@@ -426,7 +426,7 @@ export const Admin = () => {
           className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all duration-200 ${
             activeTab === 'upload'
               ? 'bg-gradient-to-br from-cq-coral to-cq-amber text-cq-on-accent shadow-cq-accent'
-              : 'text-cq-sub hover:text-cq-ink hover:bg-cq-panel/60'
+              : 'text-cq-sub hover:text-cq-ink hover:bg-cq-panel'
           }`}
         >
           <UploadCloud className="w-4 h-4" />
@@ -437,10 +437,10 @@ export const Admin = () => {
       {/* 内容区 */}
       {activeTab === 'upload' && <UploadSection />}
       {activeTab === 'analysis' && (
-        <div className="bg-cq-surface/90 backdrop-blur-md border border-cq-line rounded-3xl p-6 sm:p-8 shadow-cq-card">
+        <div className="bg-cq-surface backdrop-blur-md border border-cq-line rounded-3xl p-6 sm:p-8 shadow-cq-card">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-cq-amber/12 flex items-center justify-center">
-              <Edit3 className="w-5 h-5 text-cq-amber" />
+            <div className="w-10 h-10 rounded-xl bg-cq-acc-soft flex items-center justify-center">
+              <Edit3 className="w-5 h-5 text-cq-acc" />
             </div>
             <div>
               <h2 className="font-display text-xl font-bold text-cq-ink">题目解析管理</h2>

@@ -41,8 +41,8 @@ const StartModal = ({ progress, onContinue, onRestart }) => {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
       <div className="bg-cq-surface border border-cq-line rounded-2xl shadow-cq-card max-w-md w-full p-8">
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 rounded-full bg-cq-amber/12 flex items-center justify-center">
-            <BookOpen className="w-6 h-6 text-cq-amber" />
+          <div className="w-12 h-12 rounded-full bg-cq-acc-soft flex items-center justify-center">
+            <BookOpen className="w-6 h-6 text-cq-acc" />
           </div>
           <div>
             <h2 className="font-display text-xl font-bold text-cq-ink">欢迎回来</h2>
@@ -54,20 +54,20 @@ const StartModal = ({ progress, onContinue, onRestart }) => {
           {hasProgress ? (
             <button
               onClick={onContinue}
-              className="w-full flex items-center gap-4 p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-left transition group"
+              className="w-full flex items-center gap-4 p-4 rounded-xl border border-cq-ok bg-cq-ok-soft hover:bg-cq-ok-soft text-left transition group"
             >
-              <PlayCircle className="w-8 h-8 text-emerald-400 flex-shrink-0" />
+              <PlayCircle className="w-8 h-8 text-cq-ok flex-shrink-0" />
               <div>
-                <p className="font-semibold text-emerald-300">继续上次练习</p>
+                <p className="font-semibold text-cq-ok">继续上次练习</p>
                 <p className="text-sm text-cq-sub mt-0.5">
-                  从第 <span className="text-emerald-400 font-bold">{progress.currentIndex + 1}</span> 题继续
-                  &nbsp;·&nbsp;已完成 <span className="text-emerald-400 font-bold">{answeredCount}</span> 题
+                  从第 <span className="text-cq-ok font-bold">{progress.currentIndex + 1}</span> 题继续
+                  &nbsp;·&nbsp;已完成 <span className="text-cq-ok font-bold">{answeredCount}</span> 题
                 </p>
               </div>
-              <ArrowRight className="w-5 h-5 text-cq-faint group-hover:text-emerald-400 ml-auto transition" />
+              <ArrowRight className="w-5 h-5 text-cq-faint group-hover:text-cq-ok ml-auto transition" />
             </button>
           ) : (
-            <div className="w-full flex items-center gap-4 p-4 rounded-xl border border-cq-line bg-cq-panel/50 text-left opacity-60 cursor-not-allowed">
+            <div className="w-full flex items-center gap-4 p-4 rounded-xl border border-cq-line bg-cq-panel text-left opacity-60 cursor-not-allowed">
               <PlayCircle className="w-8 h-8 text-cq-faint flex-shrink-0" />
               <div>
                 <p className="font-semibold text-cq-sub">继续上次练习</p>
@@ -78,14 +78,14 @@ const StartModal = ({ progress, onContinue, onRestart }) => {
 
           <button
             onClick={onRestart}
-            className="w-full flex items-center gap-4 p-4 rounded-xl border border-cq-amber/30 bg-cq-amber/10 hover:bg-cq-amber/20 text-left transition group"
+            className="w-full flex items-center gap-4 p-4 rounded-xl border border-cq-acc bg-cq-acc-soft hover:bg-cq-acc-soft text-left transition group"
           >
-            <RefreshCw className="w-8 h-8 text-cq-amber flex-shrink-0" />
+            <RefreshCw className="w-8 h-8 text-cq-acc flex-shrink-0" />
             <div>
-              <p className="font-semibold text-cq-amber">重新开始</p>
+              <p className="font-semibold text-cq-acc">重新开始</p>
               <p className="text-sm text-cq-sub mt-0.5">从第 1 题重新刷题，清空所有进度</p>
             </div>
-            <ArrowRight className="w-5 h-5 text-cq-faint group-hover:text-cq-amber ml-auto transition" />
+            <ArrowRight className="w-5 h-5 text-cq-faint group-hover:text-cq-acc ml-auto transition" />
           </button>
         </div>
       </div>
@@ -259,12 +259,12 @@ export const PracticeMode = () => {
 
     if (!isSubmitted) {
       return isPending
-        ? 'bg-cq-amber/15 border-cq-amber text-cq-ink'
-        : 'bg-cq-panel/60 border-cq-line text-cq-sub hover:bg-cq-panel hover:border-cq-faint cursor-pointer';
+        ? 'bg-cq-acc-soft border-cq-acc text-cq-ink'
+        : 'bg-cq-panel border-cq-line text-cq-sub hover:bg-cq-panel hover:border-cq-faint cursor-pointer';
     }
-    if (isCorrectOpt) return 'bg-emerald-500/15 border-emerald-500 text-emerald-200';
-    if (isUserSelected && !isCorrectOpt) return 'bg-red-500/15 border-red-500 text-red-200';
-    return 'bg-cq-panel/30 border-cq-line text-cq-faint';
+    if (isCorrectOpt) return 'bg-cq-ok-soft border-cq-ok text-cq-ok';
+    if (isUserSelected && !isCorrectOpt) return 'bg-cq-bad-soft border-cq-bad text-cq-bad';
+    return 'bg-cq-panel border-cq-line text-cq-faint';
   };
 
   const getCheckboxStyle = (opt) => {
@@ -273,9 +273,9 @@ export const PracticeMode = () => {
     const userAns = answers[currentIndex] || [];
     const isUserSelected = userAns.includes(opt);
 
-    if (!isSubmitted) return isPending ? 'border-cq-amber bg-cq-amber' : 'border-cq-faint';
-    if (isCorrectOpt) return 'border-emerald-500 bg-emerald-500';
-    if (isUserSelected) return 'border-red-500 bg-red-500';
+    if (!isSubmitted) return isPending ? 'border-cq-acc bg-cq-acc' : 'border-cq-faint';
+    if (isCorrectOpt) return 'border-cq-ok bg-cq-ok';
+    if (isUserSelected) return 'border-cq-bad bg-cq-bad';
     return 'border-cq-faint';
   };
 
@@ -283,7 +283,7 @@ export const PracticeMode = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center py-20 min-h-[60vh]">
-        <Loader2 className="animate-spin w-12 h-12 text-cq-amber" />
+        <Loader2 className="animate-spin w-12 h-12 text-cq-acc" />
       </div>
     );
   }
@@ -291,7 +291,7 @@ export const PracticeMode = () => {
   if (error || questions.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 min-h-[60vh] text-center">
-        <AlertCircle className="w-16 h-16 text-yellow-500 mb-4" />
+        <AlertCircle className="w-16 h-16 text-cq-gold mb-4" />
         <h2 className="font-display text-2xl font-bold text-cq-ink mb-2">{error || '题库为空'}</h2>
         <p className="text-cq-sub">目前系统里还没有题目，请联系管理员上传题库。</p>
       </div>
@@ -319,33 +319,33 @@ export const PracticeMode = () => {
           <div className="flex items-center gap-3">
             <h1 className="font-display text-2xl font-bold text-cq-ink flex items-center gap-2">
               练习模式
-              <span className="font-mono text-sm px-3 py-1 bg-cq-amber/12 text-cq-amber rounded-full">
+              <span className="font-mono text-sm px-3 py-1 bg-cq-acc-soft text-cq-acc rounded-full">
                 {currentIndex + 1} / {questions.length}
               </span>
             </h1>
             {saveStatus && (
-              <span className="text-xs text-emerald-400 animate-fade-in">{saveStatus}</span>
+              <span className="text-xs text-cq-ok animate-fade-in">{saveStatus}</span>
             )}
           </div>
           <div className="flex gap-2">
             <button
               onClick={() => setShowModal(true)}
               title="返回选择界面"
-              className="p-2 bg-cq-panel hover:bg-cq-panel/70 text-cq-sub hover:text-cq-ink rounded-lg transition"
+              className="p-2 bg-cq-panel hover:bg-cq-panel2 text-cq-sub hover:text-cq-ink rounded-lg transition"
             >
               <RefreshCw className="w-4 h-4" />
             </button>
             <button
               onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))}
               disabled={currentIndex === 0}
-              className="p-2 bg-cq-panel hover:bg-cq-panel/70 disabled:opacity-50 text-cq-ink rounded-lg transition"
+              className="p-2 bg-cq-panel hover:bg-cq-panel2 disabled:opacity-50 text-cq-ink rounded-lg transition"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
             <button
               onClick={() => setCurrentIndex(Math.min(questions.length - 1, currentIndex + 1))}
               disabled={currentIndex === questions.length - 1}
-              className="p-2 bg-cq-panel hover:bg-cq-panel/70 disabled:opacity-50 text-cq-ink rounded-lg transition"
+              className="p-2 bg-cq-panel hover:bg-cq-panel2 disabled:opacity-50 text-cq-ink rounded-lg transition"
             >
               <ChevronRight className="w-5 h-5" />
             </button>
@@ -353,7 +353,7 @@ export const PracticeMode = () => {
         </div>
 
         {/* 题目卡片 */}
-        <div className="bg-cq-surface/90 backdrop-blur-xl border border-cq-line rounded-2xl p-6 md:p-8 shadow-cq-card relative overflow-hidden">
+        <div className="bg-cq-surface backdrop-blur-xl border border-cq-line rounded-2xl p-6 md:p-8 shadow-cq-card relative overflow-hidden">
           <div className="absolute top-0 right-0 bg-gradient-to-br from-cq-coral to-cq-amber text-cq-on-accent font-mono text-xs font-bold px-4 py-1.5 rounded-bl-xl shadow-lg">
             {currentQ.type}
           </div>
@@ -401,23 +401,23 @@ export const PracticeMode = () => {
             ) : (
               <div className="space-y-4">
                 {/* 对错反馈卡 */}
-                <div className={`flex items-center gap-3 p-4 rounded-xl border ${correctResult ? 'bg-emerald-500/10 border-emerald-500/40' : 'bg-red-500/10 border-red-500/40'}`}>
+                <div className={`flex items-center gap-3 p-4 rounded-xl border ${correctResult ? 'bg-cq-ok-soft border-cq-ok' : 'bg-cq-bad-soft border-cq-bad'}`}>
                   {correctResult ? (
                     <>
-                      <CheckCircle className="w-7 h-7 text-emerald-400 flex-shrink-0" />
+                      <CheckCircle className="w-7 h-7 text-cq-ok flex-shrink-0" />
                       <div>
-                        <p className="font-bold text-emerald-400">回答正确！</p>
-                        <p className="text-sm text-cq-sub">正确答案：<span className="text-emerald-300 font-mono">{currentQ.answer}</span></p>
+                        <p className="font-bold text-cq-ok">回答正确！</p>
+                        <p className="text-sm text-cq-sub">正确答案：<span className="text-cq-ok font-mono">{currentQ.answer}</span></p>
                       </div>
                     </>
                   ) : (
                     <>
-                      <XCircle className="w-7 h-7 text-red-400 flex-shrink-0" />
+                      <XCircle className="w-7 h-7 text-cq-bad flex-shrink-0" />
                       <div>
-                        <p className="font-bold text-red-400">回答错误，已记入错题本</p>
+                        <p className="font-bold text-cq-bad">回答错误，已记入错题本</p>
                         <p className="text-sm text-cq-sub">
-                          你的答案：<span className="text-red-300 font-mono">{(answers[currentIndex] || []).map(a => a.substring(0, 1)).sort().join(', ')}</span>
-                          正确答案：<span className="text-emerald-300 font-mono">{currentQ.answer}</span>
+                          你的答案：<span className="text-cq-bad font-mono">{(answers[currentIndex] || []).map(a => a.substring(0, 1)).sort().join(', ')}</span>
+                          正确答案：<span className="text-cq-ok font-mono">{currentQ.answer}</span>
                         </p>
                       </div>
                     </>
@@ -427,20 +427,20 @@ export const PracticeMode = () => {
                 {/* 解析 */}
                 {currentQ.analysis && (
                   <div className="p-5 bg-cq-surface border border-cq-line rounded-xl text-sm">
-                    <h4 className="font-bold text-cq-amber mb-3 flex items-center gap-2">
+                    <h4 className="font-bold text-cq-acc mb-3 flex items-center gap-2">
                       <BookOpen className="w-4 h-4" />
                       详细解析
                     </h4>
                     <div className="prose prose-sm prose-invert max-w-none
                       prose-p:text-cq-sub prose-p:leading-relaxed prose-p:my-1
-                      prose-strong:text-cq-amber prose-strong:font-semibold
-                      prose-code:text-amber-300 prose-code:bg-cq-panel prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-xs
+                      prose-strong:text-cq-acc prose-strong:font-semibold
+                      prose-code:text-cq-gold prose-code:bg-cq-panel prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-xs
                       prose-pre:bg-cq-panel prose-pre:border prose-pre:border-cq-line prose-pre:rounded-lg
                       prose-ul:text-cq-sub prose-ul:my-1 prose-li:my-0.5
                       prose-ol:text-cq-sub prose-ol:my-1
                       prose-h1:text-cq-ink prose-h2:text-cq-ink prose-h3:text-cq-ink
-                      prose-blockquote:border-cq-amber prose-blockquote:text-cq-sub
-                      prose-a:text-cq-amber prose-a:no-underline hover:prose-a:underline">
+                      prose-blockquote:border-cq-acc prose-blockquote:text-cq-sub
+                      prose-a:text-cq-acc prose-a:no-underline hover:prose-a:underline">
                       <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
                         {currentQ.analysis}
                       </ReactMarkdown>
@@ -453,7 +453,7 @@ export const PracticeMode = () => {
                   {/* 重做此题 */}
                   <button
                     onClick={handleRedo}
-                    className="flex-1 py-3 rounded-xl font-semibold text-cq-sub transition-all duration-300 bg-cq-panel hover:bg-cq-panel/70 flex items-center justify-center gap-2"
+                    className="flex-1 py-3 rounded-xl font-semibold text-cq-sub transition-all duration-300 bg-cq-panel hover:bg-cq-panel2 flex items-center justify-center gap-2"
                   >
                     <RotateCcw className="w-4 h-4" />
                     重做此题
@@ -463,13 +463,13 @@ export const PracticeMode = () => {
                   {currentIndex < questions.length - 1 ? (
                     <button
                       onClick={goNext}
-                      className="flex-1 py-3 rounded-xl font-semibold text-cq-ink transition-all duration-300 bg-cq-panel hover:bg-cq-panel/70 flex items-center justify-center gap-2"
+                      className="flex-1 py-3 rounded-xl font-semibold text-cq-ink transition-all duration-300 bg-cq-panel hover:bg-cq-panel2 flex items-center justify-center gap-2"
                     >
                       下一题
                       <ArrowRight className="w-5 h-5" />
                     </button>
                   ) : (
-                    <div className="flex-1 text-center py-3 text-emerald-400 font-semibold flex items-center justify-center gap-2">
+                    <div className="flex-1 text-center py-3 text-cq-ok font-semibold flex items-center justify-center gap-2">
                       <CheckCircle className="w-5 h-5" />
                       已完成全部 {questions.length} 题！
                     </div>
@@ -489,12 +489,12 @@ export const PracticeMode = () => {
               <div
                 key={idx}
                 className={`flex-1 rounded-full transition-colors cursor-pointer ${idx === currentIndex
-                    ? 'bg-cq-amber'
+                    ? 'bg-cq-acc'
                     : !isDone
-                      ? 'bg-cq-panel hover:bg-cq-panel/70'
+                      ? 'bg-cq-panel hover:bg-cq-panel2'
                       : isRight
-                        ? 'bg-emerald-500/60 hover:bg-emerald-500'
-                        : 'bg-red-500/60 hover:bg-red-500'
+                        ? 'bg-cq-ok-soft hover:bg-cq-ok'
+                        : 'bg-cq-bad-soft hover:bg-cq-bad'
                   }`}
                 onClick={() => setCurrentIndex(idx)}
                 title={`第 ${idx + 1} 题`}
@@ -506,11 +506,11 @@ export const PracticeMode = () => {
         {/* 底部统计 */}
         <div className="mt-4 flex justify-center gap-6 text-sm text-cq-faint">
           <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+            <span className="w-2 h-2 rounded-full bg-cq-ok inline-block" />
             答对 {Object.keys(submitted).filter(k => isAnswerCorrect(answers[k] || [], questions[k]?.answer)).length}
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-red-500 inline-block" />
+            <span className="w-2 h-2 rounded-full bg-cq-bad inline-block" />
             答错 {Object.keys(submitted).filter(k => !isAnswerCorrect(answers[k] || [], questions[k]?.answer)).length}
           </span>
           <span className="flex items-center gap-1.5">

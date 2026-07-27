@@ -46,7 +46,7 @@ export const Dashboard = () => {
   return (
     <div className="max-w-5xl mx-auto space-y-8 animate-fade-in-up">
       {/* 主横幅 */}
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-center py-6 bg-cq-surface/90 backdrop-blur-md rounded-2xl p-8 border border-cq-line shadow-cq-card">
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center py-6 bg-cq-surface backdrop-blur-md rounded-2xl p-8 border border-cq-line shadow-cq-card">
         <div>
           <h1 className="font-display text-3xl font-bold text-cq-ink mb-2 tracking-tight">你好, {user?.username}</h1>
           <p className="text-cq-sub">准备好继续你的 AWS 云认证学习之旅了吗？</p>
@@ -61,8 +61,8 @@ export const Dashboard = () => {
               继续练习（第 {progress.currentIndex + 1} 题）
             </Link>
           ) : (
-            <Link to="/practice" className="px-6 py-2.5 bg-cq-panel hover:bg-cq-panel/70 text-cq-ink rounded-xl transition duration-300 font-medium flex items-center gap-2 border border-cq-line">
-              <BookOpen className="w-4 h-4 text-cq-amber" />
+            <Link to="/practice" className="px-6 py-2.5 bg-cq-panel hover:bg-cq-panel2 text-cq-ink rounded-xl transition duration-300 font-medium flex items-center gap-2 border border-cq-line">
+              <BookOpen className="w-4 h-4 text-cq-acc" />
               开始刷题
             </Link>
           )}
@@ -75,18 +75,18 @@ export const Dashboard = () => {
 
       {/* 统计卡片 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-cq-surface/90 border border-cq-line rounded-2xl p-6 shadow-cq-card flex items-center gap-4 hover:border-cq-amber/50 transition duration-300">
-          <div className="w-14 h-14 rounded-full bg-cq-amber/12 flex items-center justify-center">
-            <TrendingUp className="w-7 h-7 text-cq-amber" />
+        <div className="bg-cq-surface border border-cq-line rounded-2xl p-6 shadow-cq-card flex items-center gap-4 hover:border-cq-acc transition duration-300">
+          <div className="w-14 h-14 rounded-full bg-cq-acc-soft flex items-center justify-center">
+            <TrendingUp className="w-7 h-7 text-cq-acc" />
           </div>
           <div>
             <p className="text-sm text-cq-sub font-medium">参加模考次数</p>
             <p className="font-mono text-2xl font-bold text-cq-ink">{totalTests}</p>
           </div>
         </div>
-        <div className="bg-cq-surface/90 border border-cq-line rounded-2xl p-6 shadow-cq-card flex items-center gap-4 hover:border-emerald-500/50 transition duration-300">
-          <div className="w-14 h-14 rounded-full bg-emerald-500/10 flex items-center justify-center">
-            <Target className="w-7 h-7 text-emerald-400" />
+        <div className="bg-cq-surface border border-cq-line rounded-2xl p-6 shadow-cq-card flex items-center gap-4 hover:border-cq-ok transition duration-300">
+          <div className="w-14 h-14 rounded-full bg-cq-ok-soft flex items-center justify-center">
+            <Target className="w-7 h-7 text-cq-ok" />
           </div>
           <div>
             <p className="text-sm text-cq-sub font-medium">历史最高得分</p>
@@ -96,18 +96,18 @@ export const Dashboard = () => {
         {/* 错题本快捷入口 */}
         <Link
           to="/wrong-answers"
-          className="bg-cq-surface/90 border border-cq-line rounded-2xl p-6 shadow-cq-card flex items-center gap-4 hover:border-red-500/50 transition duration-300 cursor-pointer"
+          className="bg-cq-surface border border-cq-line rounded-2xl p-6 shadow-cq-card flex items-center gap-4 hover:border-cq-bad transition duration-300 cursor-pointer"
         >
-          <div className="w-14 h-14 rounded-full bg-red-500/10 flex items-center justify-center">
-            <XCircle className="w-7 h-7 text-red-400" />
+          <div className="w-14 h-14 rounded-full bg-cq-bad-soft flex items-center justify-center">
+            <XCircle className="w-7 h-7 text-cq-bad" />
           </div>
           <div>
             <p className="text-sm text-cq-sub font-medium">错题本</p>
             <p className="font-mono text-2xl font-bold text-cq-ink">{wrongCount} 道</p>
           </div>
         </Link>
-        <div className="bg-cq-surface/90 border border-cq-line rounded-2xl p-6 shadow-cq-card flex items-center gap-4">
-          <div className="w-14 h-14 rounded-full bg-cq-gold/12 flex items-center justify-center">
+        <div className="bg-cq-surface border border-cq-line rounded-2xl p-6 shadow-cq-card flex items-center gap-4">
+          <div className="w-14 h-14 rounded-full bg-cq-gold-soft flex items-center justify-center">
             <Clock className="w-7 h-7 text-cq-gold" />
           </div>
           <div>
@@ -119,17 +119,17 @@ export const Dashboard = () => {
 
       {/* 练习进度横幅（有进度时显示） */}
       {progress && (
-        <div className="bg-emerald-900/20 border border-emerald-500/30 rounded-2xl p-5 flex items-center justify-between">
+        <div className="bg-cq-ok-soft border border-cq-ok rounded-2xl p-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <PlayCircle className="w-6 h-6 text-emerald-400 flex-shrink-0" />
+            <PlayCircle className="w-6 h-6 text-cq-ok flex-shrink-0" />
             <div>
-              <p className="text-emerald-300 font-semibold">你有未完成的练习</p>
+              <p className="text-cq-ok font-semibold">你有未完成的练习</p>
               <p className="text-cq-sub text-sm">上次停在第 {progress.currentIndex + 1} 题，点击继续上次的进度。</p>
             </div>
           </div>
           <Link
             to="/practice"
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl transition font-medium text-sm"
+            className="flex items-center gap-2 px-4 py-2 bg-cq-ok hover:bg-cq-ok text-white rounded-xl transition font-medium text-sm"
           >
             继续
             <ArrowRight className="w-4 h-4" />
@@ -138,18 +138,18 @@ export const Dashboard = () => {
       )}
 
       {/* 模考历史记录 */}
-      <div className="bg-cq-surface/90 border border-cq-line rounded-2xl shadow-cq-card overflow-hidden">
+      <div className="bg-cq-surface border border-cq-line rounded-2xl shadow-cq-card overflow-hidden">
         <div className="px-6 py-5 border-b border-cq-line">
           <h3 className="font-display text-lg font-semibold text-cq-ink">答题历史记录</h3>
         </div>
         <div className="p-6">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cq-amber mb-4"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cq-acc mb-4"></div>
               <p className="text-cq-sub">加载记录中...</p>
             </div>
           ) : error ? (
-            <div className="flex items-center gap-2 text-red-400 bg-red-400/10 p-4 rounded-xl">
+            <div className="flex items-center gap-2 text-cq-bad bg-cq-bad-soft p-4 rounded-xl">
               <AlertCircle className="w-5 h-5" />
               {error}
             </div>
@@ -173,12 +173,12 @@ export const Dashboard = () => {
                 </thead>
                 <tbody className="divide-y divide-cq-line">
                   {history.map((record) => (
-                    <tr key={record.id} className="hover:bg-white/5 transition">
+                    <tr key={record.id} className="hover:bg-cq-panel2 transition">
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-cq-sub">
                         {new Date(record.createdAt).toLocaleString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full bg-cq-amber/12 text-cq-amber font-mono">
+                        <span className="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full bg-cq-acc-soft text-cq-acc font-mono">
                           {record.score} 分
                         </span>
                       </td>

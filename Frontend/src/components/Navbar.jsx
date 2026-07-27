@@ -1,9 +1,11 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { BookOpen, User, LogOut, CheckSquare, Crown, XCircle } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
+import { BookOpen, User, LogOut, CheckSquare, Crown, XCircle, Sun, Moon } from 'lucide-react';
 
 export const Navbar = () => {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -12,7 +14,7 @@ export const Navbar = () => {
   };
 
   return (
-    <nav className="bg-cq-bg/80 backdrop-blur-md border-b border-cq-line sticky top-0 z-50">
+    <nav className="bg-cq-nav backdrop-blur-md border-b border-cq-line sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           <div className="flex items-center gap-2">
@@ -25,6 +27,14 @@ export const Navbar = () => {
           </div>
 
           <div className="flex items-center gap-4">
+            <button
+              onClick={toggleTheme}
+              title="切换深浅色 Toggle theme"
+              aria-label="切换深浅色"
+              className="w-9 h-9 rounded-lg border border-cq-line bg-cq-panel text-cq-sub hover:text-cq-ink flex items-center justify-center transition"
+            >
+              {theme === 'dark' ? <Moon className="h-[18px] w-[18px]" /> : <Sun className="h-[18px] w-[18px]" />}
+            </button>
             {user ? (
               <>
                 <Link to="/practice" className="text-cq-sub hover:text-cq-ink transition flex items-center gap-1 text-sm font-medium">
@@ -33,20 +43,20 @@ export const Navbar = () => {
                 <Link to="/exam" className="text-cq-sub hover:text-cq-ink transition flex items-center gap-1 text-sm font-medium">
                   <BookOpen className="h-4 w-4" /> 模考
                 </Link>
-                <Link to="/wrong-answers" className="text-red-400 hover:text-red-300 transition flex items-center gap-1 text-sm font-medium">
+                <Link to="/wrong-answers" className="text-cq-bad hover:text-cq-bad transition flex items-center gap-1 text-sm font-medium">
                   <XCircle className="h-4 w-4" /> 错题本
                 </Link>
                 {user.role === 'Admin' && (
-                  <Link to="/admin" className="text-cq-amber hover:text-cq-gold transition flex items-center gap-1 text-sm font-medium">
+                  <Link to="/admin" className="text-cq-acc hover:text-cq-gold transition flex items-center gap-1 text-sm font-medium">
                     <Crown className="h-4 w-4" /> 管理面板
                   </Link>
                 )}
                 <div className="h-6 w-px bg-cq-line mx-2"></div>
-                <Link to="/dashboard" className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-cq-panel hover:bg-cq-panel/70 border border-cq-line transition">
+                <Link to="/dashboard" className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-cq-panel hover:bg-cq-panel2 border border-cq-line transition">
                   <User className="h-4 w-4 text-cq-sub" />
                   <span className="text-sm text-cq-ink">{user.username}</span>
                 </Link>
-                <button onClick={handleLogout} className="p-2 text-cq-sub hover:text-red-400 transition" title="Logout">
+                <button onClick={handleLogout} className="p-2 text-cq-sub hover:text-cq-bad transition" title="Logout">
                   <LogOut className="h-5 w-5" />
                 </button>
               </>
