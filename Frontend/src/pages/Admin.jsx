@@ -74,16 +74,16 @@ const UploadSection = () => {
   };
 
   return (
-    <div className="bg-gray-900/60 backdrop-blur-md border border-gray-800 rounded-3xl p-8 sm:p-10 shadow-2xl relative overflow-hidden text-center">
-      <div className="absolute top-0 right-0 w-64 h-64 bg-pink-500/10 rounded-full filter blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-500/10 rounded-full filter blur-3xl translate-y-1/2 -translate-x-1/2 pointer-events-none" />
+    <div className="bg-cq-surface/90 backdrop-blur-md border border-cq-line rounded-3xl p-8 sm:p-10 shadow-cq-card relative overflow-hidden text-center">
+      <div className="absolute top-0 right-0 w-64 h-64 bg-cq-coral/10 rounded-full filter blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-64 h-64 bg-cq-amber/10 rounded-full filter blur-3xl translate-y-1/2 -translate-x-1/2 pointer-events-none" />
       <div className="relative z-10">
-        <UploadCloud className="w-16 h-16 text-indigo-400 mx-auto mb-4" />
-        <h2 className="text-2xl font-extrabold text-white mb-2">上传题库</h2>
-        <p className="text-gray-400 mb-8 max-w-xl mx-auto text-sm">
-          请上传结构化 <code className="text-indigo-300 bg-indigo-900/40 px-1.5 py-0.5 rounded">aws_questions.json</code> 题库文件。原有题库将被清空并替换。
+        <UploadCloud className="w-16 h-16 text-cq-amber mx-auto mb-4" />
+        <h2 className="font-display text-2xl font-bold text-cq-ink mb-2">上传题库</h2>
+        <p className="text-cq-sub mb-8 max-w-xl mx-auto text-sm">
+          请上传结构化 <code className="text-cq-amber bg-cq-amber/10 px-1.5 py-0.5 rounded font-mono">aws_questions.json</code> 题库文件。原有题库将被清空并替换。
         </p>
-        <div className="bg-gray-800/50 border-2 border-dashed border-gray-600 rounded-2xl p-8 transition-all hover:border-indigo-500 hover:bg-indigo-500/5 group relative cursor-pointer mb-6">
+        <div className="bg-cq-panel/50 border-2 border-dashed border-cq-line rounded-2xl p-8 transition-all hover:border-cq-amber hover:bg-cq-amber/5 group relative cursor-pointer mb-6">
           <input
             type="file"
             accept=".json"
@@ -91,16 +91,16 @@ const UploadSection = () => {
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
           />
           <div className="pointer-events-none">
-            <p className="text-base font-medium text-gray-300 group-hover:text-indigo-300">
+            <p className="text-base font-medium text-cq-sub group-hover:text-cq-amber">
               {fileName ? fileName : '点击或拖拽上传 JSON 文件'}
             </p>
-            {!fileName && <p className="text-sm text-gray-500 mt-1">支持 .json 格式</p>}
+            {!fileName && <p className="text-sm text-cq-faint mt-1">支持 .json 格式</p>}
           </div>
         </div>
         <button
           onClick={handleUpload}
           disabled={!fileContent || loading}
-          className="px-10 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-indigo-600/30 flex items-center justify-center gap-2 mx-auto"
+          className="px-10 py-3.5 bg-gradient-to-br from-cq-coral to-cq-amber text-cq-on-accent font-bold rounded-xl transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-cq-accent hover:brightness-110 flex items-center justify-center gap-2 mx-auto"
         >
           {loading ? <Loader className="animate-spin w-5 h-5" /> : <UploadCloud className="w-5 h-5" />}
           {loading ? '导入中...' : '开始导入到数据库'}
@@ -186,15 +186,15 @@ const AnalysisManager = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center py-16">
-        <Loader className="animate-spin w-8 h-8 text-indigo-400" />
-        <span className="ml-3 text-gray-400">加载题目列表...</span>
+        <Loader className="animate-spin w-8 h-8 text-cq-amber" />
+        <span className="ml-3 text-cq-sub">加载题目列表...</span>
       </div>
     );
   }
 
   if (questions.length === 0) {
     return (
-      <div className="text-center py-16 text-gray-500">
+      <div className="text-center py-16 text-cq-faint">
         <FileText className="w-12 h-12 mx-auto mb-3 opacity-40" />
         <p>暂无题目，请先上传题库文件。</p>
       </div>
@@ -205,15 +205,15 @@ const AnalysisManager = () => {
     <div>
       {/* 统计栏 */}
       <div className="flex items-center justify-between mb-5">
-        <div className="flex items-center gap-4 text-sm text-gray-400">
-          <span>共 <span className="text-white font-semibold">{questions.length}</span> 题</span>
+        <div className="flex items-center gap-4 text-sm text-cq-sub">
+          <span>共 <span className="text-cq-ink font-semibold font-mono">{questions.length}</span> 题</span>
           <span className="flex items-center gap-1.5">
             <CheckCircle2 className="w-4 h-4 text-emerald-400" />
             已有解析 <span className="text-emerald-400 font-semibold">{questions.filter(q => hasRealAnalysis(q.analysis)).length}</span>
           </span>
           <span className="flex items-center gap-1.5">
-            <Circle className="w-4 h-4 text-gray-600" />
-            待补充 <span className="text-gray-300 font-semibold">{questions.filter(q => !hasRealAnalysis(q.analysis)).length}</span>
+            <Circle className="w-4 h-4 text-cq-faint" />
+            待补充 <span className="text-cq-ink font-semibold">{questions.filter(q => !hasRealAnalysis(q.analysis)).length}</span>
           </span>
         </div>
         {/* 分页 */}
@@ -221,17 +221,17 @@ const AnalysisManager = () => {
           <button
             onClick={() => setPage(p => Math.max(0, p - 1))}
             disabled={page === 0}
-            className="p-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed text-gray-300 transition"
+            className="p-1.5 rounded-lg bg-cq-panel hover:bg-cq-panel/70 disabled:opacity-30 disabled:cursor-not-allowed text-cq-sub transition"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <span className="text-sm text-gray-400 px-1">
+          <span className="text-sm text-cq-sub px-1">
             {page + 1} / {totalPages}
           </span>
           <button
             onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
             disabled={page >= totalPages - 1}
-            className="p-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed text-gray-300 transition"
+            className="p-1.5 rounded-lg bg-cq-panel hover:bg-cq-panel/70 disabled:opacity-30 disabled:cursor-not-allowed text-cq-sub transition"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -250,28 +250,28 @@ const AnalysisManager = () => {
               key={q.id}
               className={`rounded-2xl border transition-all duration-300 overflow-hidden ${
                 isEditing
-                  ? 'border-indigo-500/60 bg-indigo-900/10'
-                  : 'border-gray-800 bg-gray-900/40 hover:border-gray-700'
+                  ? 'border-cq-amber/60 bg-cq-amber/5'
+                  : 'border-cq-line bg-cq-surface/60 hover:border-cq-faint'
               }`}
             >
               {/* 题目头 */}
               <div className="flex items-start gap-3 p-4">
                 {/* 序号 + 状态点 */}
                 <div className="flex flex-col items-center gap-1 flex-shrink-0 pt-0.5">
-                  <span className="text-xs font-mono text-gray-500 leading-none">#{q.id}</span>
-                  <div className={`w-2 h-2 rounded-full mt-1 ${hasAnalysis ? 'bg-emerald-400' : 'bg-gray-600'}`}
+                  <span className="text-xs font-mono text-cq-faint leading-none">#{q.id}</span>
+                  <div className={`w-2 h-2 rounded-full mt-1 ${hasAnalysis ? 'bg-emerald-400' : 'bg-cq-faint'}`}
                     title={hasAnalysis ? '已有解析' : '暂无解析'} />
                 </div>
 
                 {/* 题目内容摘要 */}
                 <div className="flex-1 min-w-0">
-                  <p className="text-gray-300 text-sm leading-snug line-clamp-2">{q.content}</p>
+                  <p className="text-cq-sub text-sm leading-snug line-clamp-2">{q.content}</p>
                   <div className="flex items-center gap-3 mt-1.5">
-                    <span className="text-xs px-2 py-0.5 rounded bg-gray-800 text-gray-500">{q.type}</span>
-                    <span className="text-xs text-gray-600">答案：<span className="font-mono text-gray-400">{q.answer}</span></span>
+                    <span className="text-xs px-2 py-0.5 rounded bg-cq-panel text-cq-faint font-mono">{q.type}</span>
+                    <span className="text-xs text-cq-faint">答案：<span className="font-mono text-cq-sub">{q.answer}</span></span>
                     {hasAnalysis
                       ? <span className="text-xs text-emerald-500 flex items-center gap-0.5"><CheckCircle2 className="w-3 h-3" /> 已有解析</span>
-                      : <span className="text-xs text-gray-600">暂无解析</span>
+                      : <span className="text-xs text-cq-faint">暂无解析</span>
                     }
                   </div>
                 </div>
@@ -291,7 +291,7 @@ const AnalysisManager = () => {
                   {!isEditing ? (
                     <button
                       onClick={() => startEdit(q)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-600/30 transition"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-cq-amber/15 hover:bg-cq-amber/25 text-cq-amber border border-cq-amber/30 transition"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
                       {hasAnalysis ? '编辑解析' : '添加解析'}
@@ -299,7 +299,7 @@ const AnalysisManager = () => {
                   ) : (
                     <button
                       onClick={cancelEdit}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-700/50 hover:bg-gray-700 text-gray-400 transition"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-cq-panel hover:bg-cq-panel/70 text-cq-sub transition"
                     >
                       <X className="w-3.5 h-3.5" /> 取消
                     </button>
@@ -309,15 +309,15 @@ const AnalysisManager = () => {
 
               {/* 展开的编辑区 */}
               {isEditing && (
-                <div className="border-t border-gray-800 p-4 space-y-3 animate-fade-in">
+                <div className="border-t border-cq-line p-4 space-y-3 animate-fade-in">
                   {/* 切换编辑/预览 */}
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    <span className="text-xs font-semibold text-cq-sub uppercase tracking-wider">
                       解析内容（支持 Markdown）
                     </span>
                     <button
                       onClick={() => setPreview(v => !v)}
-                      className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400 transition"
+                      className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg bg-cq-panel hover:bg-cq-panel/70 text-cq-sub transition"
                     >
                       <BookOpen className="w-3.5 h-3.5" />
                       {preview ? '返回编辑' : '预览'}
@@ -330,26 +330,26 @@ const AnalysisManager = () => {
                       onChange={e => setEditContent(e.target.value)}
                       rows={10}
                       placeholder={`在此输入 Markdown 格式的解析内容...\n\n例如：\n## 解析思路\n\n正确答案是 **A**，原因如下：\n\n- AWS S3 是对象存储服务\n- 适合存储静态文件\n\n> 参考：AWS 官方文档`}
-                      className="w-full bg-gray-800/60 border border-gray-700 rounded-xl px-4 py-3 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 resize-none font-mono leading-relaxed transition"
+                      className="w-full bg-cq-panel border border-cq-line rounded-xl px-4 py-3 text-sm text-cq-ink placeholder-cq-faint focus:outline-none focus:border-cq-amber focus:ring-1 focus:ring-cq-amber/50 resize-none font-mono leading-relaxed transition"
                     />
                   ) : (
-                    <div className="bg-gray-800/40 border border-gray-700 rounded-xl px-5 py-4 min-h-[200px]">
+                    <div className="bg-cq-panel/40 border border-cq-line rounded-xl px-5 py-4 min-h-[200px]">
                       {editContent ? (
                         <div className="prose prose-sm prose-invert max-w-none
-                          prose-p:text-gray-300 prose-p:leading-relaxed prose-p:my-1
-                          prose-strong:text-indigo-300 prose-strong:font-semibold
-                          prose-code:text-amber-300 prose-code:bg-gray-900 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-xs
-                          prose-pre:bg-gray-900 prose-pre:border prose-pre:border-gray-700 prose-pre:rounded-lg
-                          prose-ul:text-gray-300 prose-li:my-0.5
-                          prose-ol:text-gray-300
-                          prose-h2:text-white prose-h3:text-gray-200
-                          prose-blockquote:border-indigo-500 prose-blockquote:text-gray-400">
+                          prose-p:text-cq-sub prose-p:leading-relaxed prose-p:my-1
+                          prose-strong:text-cq-amber prose-strong:font-semibold
+                          prose-code:text-amber-300 prose-code:bg-cq-bg prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-xs
+                          prose-pre:bg-cq-bg prose-pre:border prose-pre:border-cq-line prose-pre:rounded-lg
+                          prose-ul:text-cq-sub prose-li:my-0.5
+                          prose-ol:text-cq-sub
+                          prose-h2:text-cq-ink prose-h3:text-cq-ink
+                          prose-blockquote:border-cq-amber prose-blockquote:text-cq-sub">
                           <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
                             {editContent}
                           </ReactMarkdown>
                         </div>
                       ) : (
-                        <p className="text-gray-600 text-sm italic">（内容为空）</p>
+                        <p className="text-cq-faint text-sm italic">（内容为空）</p>
                       )}
                     </div>
                   )}
@@ -358,7 +358,7 @@ const AnalysisManager = () => {
                     <button
                       onClick={() => saveAnalysis(q.id)}
                       disabled={savingId === q.id}
-                      className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-600/20"
+                      className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold bg-gradient-to-br from-cq-coral to-cq-amber text-cq-on-accent transition disabled:opacity-50 disabled:cursor-not-allowed shadow-cq-accent hover:brightness-110"
                     >
                       {savingId === q.id
                         ? <><Loader className="animate-spin w-4 h-4" /> 保存中...</>
@@ -375,19 +375,19 @@ const AnalysisManager = () => {
 
       {/* 底部分页 */}
       {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-3 mt-6 pt-6 border-t border-gray-800">
+        <div className="flex justify-center items-center gap-3 mt-6 pt-6 border-t border-cq-line">
           <button
             onClick={() => { setPage(p => Math.max(0, p - 1)); setEditingId(null); }}
             disabled={page === 0}
-            className="flex items-center gap-1 px-4 py-2 rounded-lg text-sm bg-gray-800 hover:bg-gray-700 disabled:opacity-30 text-gray-300 transition"
+            className="flex items-center gap-1 px-4 py-2 rounded-lg text-sm bg-cq-panel hover:bg-cq-panel/70 disabled:opacity-30 text-cq-sub transition"
           >
             <ChevronLeft className="w-4 h-4" /> 上一页
           </button>
-          <span className="text-sm text-gray-500">第 {page + 1} 页 / 共 {totalPages} 页</span>
+          <span className="text-sm text-cq-faint">第 {page + 1} 页 / 共 {totalPages} 页</span>
           <button
             onClick={() => { setPage(p => Math.min(totalPages - 1, p + 1)); setEditingId(null); }}
             disabled={page >= totalPages - 1}
-            className="flex items-center gap-1 px-4 py-2 rounded-lg text-sm bg-gray-800 hover:bg-gray-700 disabled:opacity-30 text-gray-300 transition"
+            className="flex items-center gap-1 px-4 py-2 rounded-lg text-sm bg-cq-panel hover:bg-cq-panel/70 disabled:opacity-30 text-cq-sub transition"
           >
             下一页 <ChevronRight className="w-4 h-4" />
           </button>
@@ -404,18 +404,18 @@ export const Admin = () => {
   return (
     <div className="max-w-4xl mx-auto py-10 px-4 sm:px-6 animate-fade-in-up">
       <div className="mb-8">
-        <h1 className="text-3xl font-extrabold text-white mb-1">管理员面板</h1>
-        <p className="text-gray-500 text-sm">题库管理 · 解析编辑</p>
+        <h1 className="font-display text-3xl font-bold text-cq-ink mb-1">管理员面板</h1>
+        <p className="text-cq-faint text-sm">题库管理 · 解析编辑</p>
       </div>
 
       {/* 标签页导航 */}
-      <div className="flex gap-2 mb-6 bg-gray-900/60 border border-gray-800 rounded-2xl p-1.5">
+      <div className="flex gap-2 mb-6 bg-cq-surface/90 border border-cq-line rounded-2xl p-1.5">
         <button
           onClick={() => setActiveTab('analysis')}
           className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all duration-200 ${
             activeTab === 'analysis'
-              ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
-              : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/60'
+              ? 'bg-gradient-to-br from-cq-coral to-cq-amber text-cq-on-accent shadow-cq-accent'
+              : 'text-cq-sub hover:text-cq-ink hover:bg-cq-panel/60'
           }`}
         >
           <BookOpen className="w-4 h-4" />
@@ -425,8 +425,8 @@ export const Admin = () => {
           onClick={() => setActiveTab('upload')}
           className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all duration-200 ${
             activeTab === 'upload'
-              ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
-              : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/60'
+              ? 'bg-gradient-to-br from-cq-coral to-cq-amber text-cq-on-accent shadow-cq-accent'
+              : 'text-cq-sub hover:text-cq-ink hover:bg-cq-panel/60'
           }`}
         >
           <UploadCloud className="w-4 h-4" />
@@ -437,14 +437,14 @@ export const Admin = () => {
       {/* 内容区 */}
       {activeTab === 'upload' && <UploadSection />}
       {activeTab === 'analysis' && (
-        <div className="bg-gray-900/60 backdrop-blur-md border border-gray-800 rounded-3xl p-6 sm:p-8 shadow-2xl">
+        <div className="bg-cq-surface/90 backdrop-blur-md border border-cq-line rounded-3xl p-6 sm:p-8 shadow-cq-card">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center">
-              <Edit3 className="w-5 h-5 text-indigo-400" />
+            <div className="w-10 h-10 rounded-xl bg-cq-amber/12 flex items-center justify-center">
+              <Edit3 className="w-5 h-5 text-cq-amber" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-white">题目解析管理</h2>
-              <p className="text-gray-500 text-xs mt-0.5">为每道题目编写 Markdown 格式解析，绿色圆点表示已有解析</p>
+              <h2 className="font-display text-xl font-bold text-cq-ink">题目解析管理</h2>
+              <p className="text-cq-faint text-xs mt-0.5">为每道题目编写 Markdown 格式解析，绿色圆点表示已有解析</p>
             </div>
           </div>
           <AnalysisManager />
