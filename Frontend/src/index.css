@@ -4,21 +4,40 @@
 
 @layer base {
   body {
-    @apply bg-gray-950 text-gray-50 antialiased;
+    @apply bg-cq-bg text-cq-ink font-sans antialiased;
   }
 }
 
-/* Custom scrollbar for webkit */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+/* 全局暖色底纹:两处橙色径向光 + 极淡 44px 网格(顶部渐隐) */
+.cq-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(680px 420px at 82% -6%, rgba(255, 138, 61, 0.14), transparent 60%),
+    radial-gradient(720px 480px at 4% 8%, rgba(255, 107, 74, 0.16), transparent 62%),
+    #17100A;
 }
-::-webkit-scrollbar-track {
-  @apply bg-gray-900;
+.cq-backdrop::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.028) 1px, transparent 1px);
+  background-size: 44px 44px;
+  -webkit-mask-image: linear-gradient(180deg, #000, transparent 75%);
+  mask-image: linear-gradient(180deg, #000, transparent 75%);
 }
-::-webkit-scrollbar-thumb {
-  @apply bg-gray-700 rounded-full;
+
+@layer utilities {
+  .animation-delay-2000 { animation-delay: 2s; }
+  .animation-delay-4000 { animation-delay: 4s; }
 }
-::-webkit-scrollbar-thumb:hover {
-  @apply bg-gray-600;
-}
+
+/* Custom scrollbar (warm) */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #17100A; }
+::-webkit-scrollbar-thumb { background: #3a2c1e; border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: #4d3a27; }
