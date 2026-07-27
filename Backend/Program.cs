@@ -49,6 +49,13 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
+// 自动执行数据库迁移（Docker 环境自动建表）
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+}
+
 // Configure the HTTP request pipeline.
 app.UseCors();
 app.UseAuthentication();

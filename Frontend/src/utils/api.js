@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:5264/api', // Backend ASP.NET Core URL
+  baseURL: '/api', // 开发环境由 Vite proxy 转发，生产环境由 nginx 转发
   timeout: 10000,
 });
 

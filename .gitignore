@@ -2,3 +2,11 @@
 /aws_question.json
 /extracted_txt
 StartAll.bat
+
+docs/superpowers
+
+Backend/bin
+Backend/obj
+Backend/.DS_Store
+.env
+.DS_Store

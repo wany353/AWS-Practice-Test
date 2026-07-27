@@ -1,0 +1,25 @@
+services:
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: aws-quiz-backend
+    # 数据库连接串从 .env 读取（云端 Neon PostgreSQL，不进 git）
+    env_file:
+      - .env
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      ASPNETCORE_URLS: "http://0.0.0.0:8080"
+    ports:
+      - "5264:8080"
+
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+    container_name: aws-quiz-frontend
+    # 5173 被另一个项目 (blog) 的 vite 占用，这里用 5174 避免冲突
+    ports:
+      - "5174:80"
+    depends_on:
+      - backend
