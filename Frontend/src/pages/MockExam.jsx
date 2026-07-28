@@ -10,17 +10,38 @@ export const MockExam = () => {
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
+
+  // 考试（题库分类）
+  const [exams, setExams] = useState([]);
+  const [categoryId, setCategoryId] = useState('');
+
   const [answers, setAnswers] = useState({});
   const [timeLeft, setTimeLeft] = useState(60 * 60); // 1 hour test
   const [submitted, setSubmitted] = useState(false);
   const [scoreResult, setScoreResult] = useState(null);
   const navigate = useNavigate();
 
+  // 加载考试列表，默认选中第一个
   useEffect(() => {
+    api.get('/Categories')
+      .then(({ data }) => {
+        setExams(data);
+        if (data.length > 0) setCategoryId(String(data[0].id));
+        else setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  // 按所选考试抽取 65 题，切换考试即重置一场新考试
+  useEffect(() => {
+    if (!categoryId) return;
+    let cancelled = false;
     const fetchQuestions = async () => {
+      setLoading(true);
+      setError('');
       try {
-        const { data } = await api.get('/Questions');
+        const { data } = await api.get('/Questions', { params: { categoryId } });
+        if (cancelled) return;
         // Shuffle and take max 65 questions (standard AWS test) if available
         const shuffled = data.sort(() => 0.5 - Math.random());
         const selected = shuffled.slice(0, 65).map(q => ({
@@ -28,14 +49,19 @@ export const MockExam = () => {
           options: JSON.parse(q.optionsJson)
         }));
         setQuestions(selected);
+        setAnswers({});
+        setSubmitted(false);
+        setScoreResult(null);
+        setTimeLeft(60 * 60);
       } catch (err) {
-        setError('无法加载考题。');
+        if (!cancelled) setError('无法加载考题。');
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
     fetchQuestions();
-  }, []);
+    return () => { cancelled = true; };
+  }, [categoryId]);
 
   useEffect(() => {
     if (loading || submitted || error) return;
@@ -119,6 +145,18 @@ export const MockExam = () => {
         </div>
 
         <div className="flex items-center gap-4">
+          {exams.length > 0 && (
+            <select
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              title="切换考试"
+              className="px-3 py-1.5 rounded-lg bg-cq-panel border border-cq-line text-cq-ink text-sm focus:outline-none focus:ring-2 focus:ring-cq-acc transition"
+            >
+              {exams.map((ex) => (
+                <option key={ex.id} value={ex.id}>{ex.name}</option>
+              ))}
+            </select>
+          )}
           <span className="text-sm text-cq-sub hidden sm:block">
             已答: {Object.keys(answers).length} / {questions.length}
           </span>

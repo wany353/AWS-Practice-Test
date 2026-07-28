@@ -100,6 +100,11 @@ export const PracticeMode = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // 考试（题库分类）
+  const [exams, setExams] = useState([]);
+  const [categoryId, setCategoryId] = useState('');
+  const initializedRef = useRef(false);
+
   // 已提交的答案 { [questionIndex]: string[] }
   const [answers, setAnswers] = useState({});
   // 当前题目正在选择（未提交）的选项
@@ -120,33 +125,58 @@ export const PracticeMode = () => {
   const debouncedIndex = useDebounce(currentIndex, 1500);
   const debouncedAnswers = useDebounce(answers, 1500);
 
-  // 加载题目 + 读取进度（不立即应用）
+  // 加载考试列表，默认选中第一个
   useEffect(() => {
+    api.get('/Categories')
+      .then(({ data }) => {
+        setExams(data);
+        if (data.length > 0) setCategoryId(String(data[0].id));
+        else setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  // 按所选考试加载题目（首次进入读取进度并弹窗；切换考试时重置为该考试的新一轮）
+  useEffect(() => {
+    if (!categoryId) return;
+    let cancelled = false;
     const fetchAll = async () => {
+      setLoading(true);
+      setError('');
       try {
         const [questionsRes, progressRes] = await Promise.all([
-          api.get('/Questions'),
-          api.get('/PracticeProgress').catch(() => null)
+          api.get('/Questions', { params: { categoryId } }),
+          initializedRef.current ? Promise.resolve(null) : api.get('/PracticeProgress').catch(() => null)
         ]);
+        if (cancelled) return;
 
         const parsed = questionsRes.data.map(q => ({
           ...q,
           options: JSON.parse(q.optionsJson)
         }));
         setQuestions(parsed);
+        // 切换/加载考试后，本地作答状态重置
+        setCurrentIndex(0);
+        setAnswers({});
+        setSubmitted({});
+        setPendingSelection([]);
 
-        if (progressRes?.data) {
-          setSavedProgress(progressRes.data);
+        if (!initializedRef.current) {
+          if (progressRes?.data) setSavedProgress(progressRes.data);
+          setShowModal(true); // 首次进入显示选择弹窗
+          initializedRef.current = true;
+        } else {
+          readyToSave.current = true; // 切换考试后允许继续自动保存
         }
-        setShowModal(true); // 总是显示弹窗
       } catch (err) {
-        setError('加载题库失败，请检查网络或联系管理员导入题目。');
+        if (!cancelled) setError('加载题库失败，请检查网络或联系管理员导入题目。');
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
     fetchAll();
-  }, []);
+    return () => { cancelled = true; };
+  }, [categoryId]);
 
   // 自动保存进度（仅在用户做出选择后才激活）
   useEffect(() => {
@@ -323,6 +353,18 @@ export const PracticeMode = () => {
                 {currentIndex + 1} / {questions.length}
               </span>
             </h1>
+            {exams.length > 0 && (
+              <select
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+                title="切换考试"
+                className="px-3 py-1.5 rounded-lg bg-cq-panel border border-cq-line text-cq-ink text-sm focus:outline-none focus:ring-2 focus:ring-cq-acc transition"
+              >
+                {exams.map((ex) => (
+                  <option key={ex.id} value={ex.id}>{ex.name}</option>
+                ))}
+              </select>
+            )}
             {saveStatus && (
               <span className="text-xs text-cq-ok animate-fade-in">{saveStatus}</span>
             )}

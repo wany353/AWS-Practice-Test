@@ -18,6 +18,35 @@ const UploadSection = () => {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState(null);
 
+  // 考试（题库分类）选择
+  const [exams, setExams] = useState([]);
+  const [examMode, setExamMode] = useState('existing'); // 'existing' | 'new'
+  const [selectedExamId, setSelectedExamId] = useState('');
+  const [newExamName, setNewExamName] = useState('');
+
+  const loadExams = async () => {
+    try {
+      const { data } = await api.get('/Categories');
+      setExams(data);
+      if (data.length > 0) {
+        setSelectedExamId((prev) => prev || String(data[0].id));
+        setExamMode((prev) => (prev === 'new' ? prev : 'existing'));
+      } else {
+        setExamMode('new');
+      }
+      return data;
+    } catch {
+      setExamMode('new');
+      return [];
+    }
+  };
+
+  useEffect(() => { loadExams(); }, []);
+
+  const resolvedExamName = examMode === 'new'
+    ? newExamName.trim()
+    : (exams.find((e) => String(e.id) === String(selectedExamId))?.name || '');
+
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -40,10 +69,14 @@ const UploadSection = () => {
 
   const handleUpload = async () => {
     if (!fileContent) return;
+    if (!resolvedExamName) {
+      setStatus({ type: 'error', message: '请先选择或填写考试名称' });
+      return;
+    }
     setLoading(true);
     setStatus(null);
     try {
-      const payload = fileContent.map((item) => {
+      const questions = fileContent.map((item) => {
         let type = 'Single';
         const cleanAnswer = item.answer ? item.answer.replace(/[^A-Z]/g, '') : '';
         if (cleanAnswer.length > 1) type = 'Multiple';
@@ -61,10 +94,13 @@ const UploadSection = () => {
           analysis: `【相关主题】: ${item.topic || 'N/A'}\n该题目暂未提供详细的思路解析。`
         };
       });
-      const { data } = await api.post('/Questions/import', payload);
-      setStatus({ type: 'success', message: data.message || `上传成功！已成功导入 ${payload.length} 道题目。` });
+      const { data } = await api.post('/Questions/import', { examName: resolvedExamName, questions });
+      setStatus({ type: 'success', message: data.message || `已成功导入 ${questions.length} 道题目到「${resolvedExamName}」。` });
       setFileContent(null);
       setFileName('');
+      setNewExamName('');
+      await loadExams();
+      if (data.examId) { setSelectedExamId(String(data.examId)); setExamMode('existing'); }
     } catch (err) {
       console.error(err);
       setStatus({ type: 'error', message: err.response?.data?.title || err.response?.data || '导入失败，请检查数据格式与网络' });
@@ -81,8 +117,37 @@ const UploadSection = () => {
         <UploadCloud className="w-16 h-16 text-cq-acc mx-auto mb-4" />
         <h2 className="font-display text-2xl font-bold text-cq-ink mb-2">上传题库</h2>
         <p className="text-cq-sub mb-8 max-w-xl mx-auto text-sm">
-          请上传结构化 <code className="text-cq-acc bg-cq-acc-soft px-1.5 py-0.5 rounded font-mono">aws_questions.json</code> 题库文件。原有题库将被清空并替换。
+          选择或新建一个考试，再上传结构化 <code className="text-cq-acc bg-cq-acc-soft px-1.5 py-0.5 rounded font-mono">aws_questions.json</code> 题库文件。<span className="text-cq-faint">仅替换该考试下的题目，其它考试不受影响。</span>
         </p>
+
+        {/* 考试选择 */}
+        <div className="max-w-md mx-auto text-left mb-6">
+          <label className="block text-sm font-semibold text-cq-sub mb-2">考试 / Exam</label>
+          <select
+            value={examMode === 'new' ? '__new__' : selectedExamId}
+            onChange={(e) => {
+              const v = e.target.value;
+              if (v === '__new__') { setExamMode('new'); }
+              else { setExamMode('existing'); setSelectedExamId(v); }
+            }}
+            className="w-full px-4 py-3 rounded-xl bg-cq-panel border border-cq-line text-cq-ink focus:outline-none focus:ring-2 focus:ring-cq-acc focus:border-transparent transition"
+          >
+            {exams.map((ex) => (
+              <option key={ex.id} value={ex.id}>{ex.name}（{ex.questionCount} 题）</option>
+            ))}
+            <option value="__new__">＋ 新建考试…</option>
+          </select>
+          {examMode === 'new' && (
+            <input
+              type="text"
+              value={newExamName}
+              onChange={(e) => setNewExamName(e.target.value)}
+              placeholder="输入新考试名称，如 SAA-C03"
+              className="w-full mt-3 px-4 py-3 rounded-xl bg-cq-panel border border-cq-line text-cq-ink placeholder-cq-faint focus:outline-none focus:ring-2 focus:ring-cq-acc focus:border-transparent transition"
+            />
+          )}
+        </div>
+
         <div className="bg-cq-panel border-2 border-dashed border-cq-line rounded-2xl p-8 transition-all hover:border-cq-acc hover:bg-cq-acc-soft group relative cursor-pointer mb-6">
           <input
             type="file"
@@ -103,7 +168,7 @@ const UploadSection = () => {
           className="px-10 py-3.5 bg-gradient-to-br from-cq-coral to-cq-amber text-cq-on-accent font-bold rounded-xl transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-cq-accent hover:brightness-110 flex items-center justify-center gap-2 mx-auto"
         >
           {loading ? <Loader className="animate-spin w-5 h-5" /> : <UploadCloud className="w-5 h-5" />}
-          {loading ? '导入中...' : '开始导入到数据库'}
+          {loading ? '导入中...' : `导入到「${resolvedExamName || '…'}」`}
         </button>
         {status && (
           <div className={`mt-6 p-4 rounded-xl border flex items-start gap-3 text-left ${
