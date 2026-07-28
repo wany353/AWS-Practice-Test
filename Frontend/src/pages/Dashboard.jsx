@@ -10,51 +10,61 @@ export const Dashboard = () => {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [progress, setProgress] = useState(null);
   const [wrongCount, setWrongCount] = useState(0);
   const [exams, setExams] = useState([]);
   const [examFilter, setExamFilter] = useState(''); // '' = 全部考试
+  // 圆环所反映的“当前考试”的刷题进度
+  const [progressInfo, setProgressInfo] = useState({ answered: 0, total: 0, currentIndex: 0, hasProgress: false, examName: '' });
 
   // 考试列表（筛选下拉）
   useEffect(() => {
     api.get('/Categories').then(({ data }) => setExams(data)).catch(() => {});
   }, []);
 
-  // 按考试筛选加载统计
+  // 统计（按筛选）+ 当前考试的刷题进度（给圆环）
   useEffect(() => {
     let cancelled = false;
     const fetchAll = async () => {
       setLoading(true);
       const params = examFilter ? { categoryId: examFilter } : {};
+      // 圆环反映的考试：筛选优先；否则用上次学习的考试（cq-exam），再否则第一个
+      let activeExamId = examFilter;
+      if (!activeExamId) {
+        const saved = localStorage.getItem('cq-exam');
+        activeExamId = exams.some(e => String(e.id) === saved) ? saved : (exams[0] ? String(exams[0].id) : '');
+      }
       try {
-        const [historyRes, progressRes, wrongRes] = await Promise.allSettled([
+        const [historyRes, wrongRes, progRes] = await Promise.allSettled([
           api.get('/Questions/test-history', { params }),
-          examFilter ? api.get('/PracticeProgress', { params }) : Promise.resolve(null),
-          api.get('/WrongAnswers/count', { params })
+          api.get('/WrongAnswers/count', { params }),
+          activeExamId ? api.get('/PracticeProgress', { params: { categoryId: activeExamId } }) : Promise.resolve(null)
         ]);
         if (cancelled) return;
 
         if (historyRes.status === 'fulfilled') { setHistory(historyRes.value.data); setError(''); }
         else setError('无法获取测试记录');
-
-        // 「继续练习」只在选中某个具体考试时展示该考试的进度
-        if (examFilter && progressRes.status === 'fulfilled' && progressRes.value) {
-          const p = progressRes.value.data;
-          const hasProgress = p.currentIndex > 0 ||
-            (p.answersJson && p.answersJson !== '{}' && p.answersJson !== 'null');
-          setProgress(hasProgress ? p : null);
-        } else {
-          setProgress(null);
-        }
-
         if (wrongRes.status === 'fulfilled') setWrongCount(wrongRes.value.data.count || 0);
+
+        const exam = exams.find(e => String(e.id) === String(activeExamId));
+        const total = exam?.questionCount || 0;
+        let answered = 0, currentIndex = 0, hasProgress = false;
+        if (progRes && progRes.status === 'fulfilled' && progRes.value) {
+          const p = progRes.value.data;
+          const ans = JSON.parse(p.answersJson || '{}');
+          answered = Object.keys(ans).length;
+          currentIndex = p.currentIndex || 0;
+          hasProgress = currentIndex > 0 || answered > 0;
+        }
+        setProgressInfo({ answered, total, currentIndex, hasProgress, examName: exam?.name || '' });
+        // 让“继续练习/开始刷题”打开的正是圆环所示考试
+        try { if (activeExamId) localStorage.setItem('cq-exam', String(activeExamId)); } catch { /* ignore */ }
       } finally {
         if (!cancelled) setLoading(false);
       }
     };
     fetchAll();
     return () => { cancelled = true; };
-  }, [examFilter]);
+  }, [examFilter, exams]);
 
   const changeFilter = (id) => {
     setExamFilter(id);
@@ -66,11 +76,12 @@ export const Dashboard = () => {
   // 只用记录了总题数的模考来算正确率（老数据 total 为 0，跳过）
   const accRecords = history.filter(h => h.total > 0);
   const acc = (h) => Math.round((h.score / h.total) * 100);
-  const bestAccuracy = accRecords.length ? Math.max(...accRecords.map(acc)) : 0;
   const avgAccuracy = accRecords.length ? Math.round(accRecords.reduce((s, h) => s + acc(h), 0) / accRecords.length) : 0;
   const latestAccuracy = accRecords.length ? acc(accRecords[0]) : 0;
   const passCount = accRecords.filter(h => acc(h) >= 70).length;
-  const ringDash = ((bestAccuracy / 100) * 364.4).toFixed(1);
+  // 圆环：当前考试的刷题进度
+  const progressPercent = progressInfo.total > 0 ? Math.round((progressInfo.answered / progressInfo.total) * 100) : 0;
+  const ringDash = ((progressPercent / 100) * 364.4).toFixed(1);
   const currentExamName = examFilter
     ? (exams.find(e => String(e.id) === String(examFilter))?.name || '所选考试')
     : '全部考试';
@@ -99,13 +110,13 @@ export const Dashboard = () => {
           )}
         </div>
         <div className="mt-4 md:mt-0 flex gap-4 flex-wrap">
-          {progress ? (
+          {progressInfo.hasProgress ? (
             <Link
               to="/practice"
               className="px-6 py-2.5 bg-gradient-to-br from-cq-coral to-cq-amber text-cq-on-accent rounded-xl transition duration-300 font-semibold flex items-center gap-2 shadow-cq-accent hover:brightness-110"
             >
               <PlayCircle className="w-4 h-4" />
-              继续练习（第 {progress.currentIndex + 1} 题）
+              继续练习（第 {progressInfo.currentIndex + 1} 题）
             </Link>
           ) : (
             <Link to="/practice" className="px-6 py-2.5 bg-cq-panel hover:bg-cq-panel2 text-cq-ink rounded-xl transition duration-300 font-medium flex items-center gap-2 border border-cq-line">
@@ -127,16 +138,22 @@ export const Dashboard = () => {
           <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-cq-acc-soft text-cq-acc">{currentExamName}</span>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-5 items-center">
-          {/* 正确率圆环 */}
-          <div className="relative w-[104px] h-[104px] flex-none mx-auto md:mx-0">
-            <svg width="104" height="104" viewBox="0 0 132 132">
-              <circle cx="66" cy="66" r="58" fill="none" stroke="var(--cq-line2)" strokeWidth="13" />
-              <circle cx="66" cy="66" r="58" fill="none" stroke="var(--cq-acc)" strokeWidth="13" strokeLinecap="round"
-                strokeDasharray={`${ringDash} 400`} transform="rotate(-90 66 66)" style={{ transition: 'stroke-dasharray .6s ease' }} />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <div className="font-display text-2xl font-bold text-cq-ink">{bestAccuracy}%</div>
-              <div className="text-[10.5px] text-cq-faint font-semibold">最高正确率</div>
+          {/* 刷题进度圆环（当前考试） */}
+          <div className="flex flex-col items-center gap-2 md:items-start">
+            <div className="relative w-[104px] h-[104px] flex-none mx-auto md:mx-0">
+              <svg width="104" height="104" viewBox="0 0 132 132">
+                <circle cx="66" cy="66" r="58" fill="none" stroke="var(--cq-line2)" strokeWidth="13" />
+                <circle cx="66" cy="66" r="58" fill="none" stroke="var(--cq-acc)" strokeWidth="13" strokeLinecap="round"
+                  strokeDasharray={`${ringDash} 400`} transform="rotate(-90 66 66)" style={{ transition: 'stroke-dasharray .6s ease' }} />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <div className="font-display text-2xl font-bold text-cq-ink">{progressPercent}%</div>
+                <div className="text-[10.5px] text-cq-faint font-semibold">刷题进度</div>
+              </div>
+            </div>
+            <div className="text-xs text-cq-sub font-medium text-center md:text-left max-w-[160px]">
+              {progressInfo.examName ? `${progressInfo.examName} · ` : ''}
+              已答 <span className="font-mono text-cq-ink">{progressInfo.answered}/{progressInfo.total}</span>
             </div>
           </div>
           {/* 指标 chips */}
@@ -203,13 +220,13 @@ export const Dashboard = () => {
       </div>
 
       {/* 练习进度横幅（有进度时显示） */}
-      {progress && (
+      {progressInfo.hasProgress && (
         <div className="bg-cq-ok-soft border border-cq-ok rounded-2xl p-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <PlayCircle className="w-6 h-6 text-cq-ok flex-shrink-0" />
             <div>
-              <p className="text-cq-ok font-semibold">你有未完成的练习</p>
-              <p className="text-cq-sub text-sm">上次停在第 {progress.currentIndex + 1} 题，点击继续上次的进度。</p>
+              <p className="text-cq-ok font-semibold">你有未完成的练习{progressInfo.examName ? `（${progressInfo.examName}）` : ''}</p>
+              <p className="text-cq-sub text-sm">上次停在第 {progressInfo.currentIndex + 1} 题，点击继续上次的进度。</p>
             </div>
           </div>
           <Link
