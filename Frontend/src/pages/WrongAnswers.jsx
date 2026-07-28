@@ -84,7 +84,7 @@ export const WrongAnswers = () => {
             <select
               value={examFilter}
               onChange={(e) => changeFilter(e.target.value)}
-              className="px-3 py-2 rounded-xl bg-cq-panel border border-cq-line text-cq-ink text-sm focus:outline-none focus:ring-2 focus:ring-cq-acc transition"
+              className="cq-select"
             >
               <option value="">全部考试</option>
               {exams.map((ex) => (

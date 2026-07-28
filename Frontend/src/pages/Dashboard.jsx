@@ -77,7 +77,7 @@ export const Dashboard = () => {
               <select
                 value={examFilter}
                 onChange={(e) => changeFilter(e.target.value)}
-                className="px-3 py-1.5 rounded-lg bg-cq-panel border border-cq-line text-cq-ink text-sm focus:outline-none focus:ring-2 focus:ring-cq-acc transition"
+                className="cq-select"
               >
                 <option value="">全部考试</option>
                 {exams.map((ex) => (

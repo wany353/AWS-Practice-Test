@@ -130,7 +130,7 @@ const UploadSection = () => {
               if (v === '__new__') { setExamMode('new'); }
               else { setExamMode('existing'); setSelectedExamId(v); }
             }}
-            className="w-full px-4 py-3 rounded-xl bg-cq-panel border border-cq-line text-cq-ink focus:outline-none focus:ring-2 focus:ring-cq-acc focus:border-transparent transition"
+            className="cq-select w-full"
           >
             {exams.map((ex) => (
               <option key={ex.id} value={ex.id}>{ex.name}（{ex.questionCount} 题）</option>

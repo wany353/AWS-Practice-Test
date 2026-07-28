@@ -161,7 +161,7 @@ export const MockExam = () => {
               value={categoryId}
               onChange={(e) => selectExam(e.target.value)}
               title="切换考试"
-              className="px-3 py-1.5 rounded-lg bg-cq-panel border border-cq-line text-cq-ink text-sm focus:outline-none focus:ring-2 focus:ring-cq-acc transition"
+              className="cq-select"
             >
               {exams.map((ex) => (
                 <option key={ex.id} value={ex.id}>{ex.name}</option>
