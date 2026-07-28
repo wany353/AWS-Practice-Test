@@ -36,5 +36,10 @@ public class AppDbContext : DbContext
             .WithMany()
             .HasForeignKey(q => q.CategoryId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        // 每个用户每个考试只保留一条练习进度
+        modelBuilder.Entity<UserPracticeProgress>()
+            .HasIndex(p => new { p.UserId, p.CategoryId })
+            .IsUnique();
     }
 }

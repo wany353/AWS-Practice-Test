@@ -124,6 +124,7 @@ public class QuestionsController : ControllerBase
         var record = new TestRecord
         {
             UserId = userId,
+            CategoryId = testSubmit.CategoryId,
             Score = score
         };
 
@@ -134,15 +135,15 @@ public class QuestionsController : ControllerBase
     }
 
     [HttpGet("test-history")]
-    public async Task<IActionResult> GetTestHistory()
+    public async Task<IActionResult> GetTestHistory([FromQuery] int? categoryId)
     {
         var userId = int.Parse(User.FindFirstValue("uid") ?? "0");
         if (userId <= 0) return Unauthorized();
 
-        var history = await _context.TestRecords
-                                    .Where(t => t.UserId == userId)
-                                    .OrderByDescending(t => t.CreatedAt)
-                                    .ToListAsync();
+        var query = _context.TestRecords.Where(t => t.UserId == userId);
+        if (categoryId.HasValue) query = query.Where(t => t.CategoryId == categoryId.Value);
+
+        var history = await query.OrderByDescending(t => t.CreatedAt).ToListAsync();
 
         return Ok(history);
     }

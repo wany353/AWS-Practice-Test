@@ -23,13 +23,13 @@ public class PracticeProgressController : ControllerBase
     private int GetUserId() =>
         int.Parse(User.FindFirstValue("uid")!);
 
-    // GET /api/PracticeProgress — 获取当前用户的练习进度
+    // GET /api/PracticeProgress?categoryId= — 获取当前用户在某考试下的练习进度
     [HttpGet]
-    public async Task<IActionResult> GetProgress()
+    public async Task<IActionResult> GetProgress([FromQuery] int? categoryId)
     {
         var userId = GetUserId();
         var progress = await _context.PracticeProgresses
-            .FirstOrDefaultAsync(p => p.UserId == userId);
+            .FirstOrDefaultAsync(p => p.UserId == userId && p.CategoryId == categoryId);
 
         if (progress == null)
             return Ok(new { currentIndex = 0, answersJson = "{}" });
@@ -38,23 +38,25 @@ public class PracticeProgressController : ControllerBase
         {
             currentIndex = progress.CurrentIndex,
             answersJson = progress.AnswersJson,
+            categoryId = progress.CategoryId,
             updatedAt = progress.UpdatedAt
         });
     }
 
-    // POST /api/PracticeProgress — 保存或更新进度
+    // POST /api/PracticeProgress — 保存或更新某考试下的进度
     [HttpPost]
     public async Task<IActionResult> SaveProgress([FromBody] PracticeProgressDto dto)
     {
         var userId = GetUserId();
         var progress = await _context.PracticeProgresses
-            .FirstOrDefaultAsync(p => p.UserId == userId);
+            .FirstOrDefaultAsync(p => p.UserId == userId && p.CategoryId == dto.CategoryId);
 
         if (progress == null)
         {
             progress = new UserPracticeProgress
             {
                 UserId = userId,
+                CategoryId = dto.CategoryId,
                 CurrentIndex = dto.CurrentIndex,
                 AnswersJson = dto.AnswersJson,
                 UpdatedAt = DateTime.UtcNow

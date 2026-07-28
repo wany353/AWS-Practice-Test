@@ -24,6 +24,7 @@ public class ImportRequestDto
 
 public class TestSubmitDto
 {
+    public int? CategoryId { get; set; }
     public List<QuestionAnswerResponse> Answers { get; set; } = new();
 }
 
