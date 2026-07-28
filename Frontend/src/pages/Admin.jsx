@@ -201,20 +201,49 @@ const AnalysisManager = () => {
   const [savingId, setSavingId] = useState(null);
   const [saveStatus, setSaveStatus] = useState({}); // { [id]: 'success' | 'error' }
   const [preview, setPreview] = useState(false);
+  // 考试筛选（与上传/练习保持一致）
+  const [exams, setExams] = useState([]);
+  const [examFilter, setExamFilter] = useState(''); // '' = 全部考试
+  const [examsLoaded, setExamsLoaded] = useState(false);
 
+  // 加载考试列表，默认选中上次的考试（cq-exam）或第一个
   useEffect(() => {
+    api.get('/Categories')
+      .then(({ data }) => {
+        setExams(data);
+        if (data.length > 0) {
+          const saved = localStorage.getItem('cq-exam');
+          setExamFilter(data.some(e => String(e.id) === saved) ? saved : String(data[0].id));
+        }
+      })
+      .catch(() => {})
+      .finally(() => setExamsLoaded(true));
+  }, []);
+
+  // 按考试筛选加载题目
+  useEffect(() => {
+    if (!examsLoaded) return;
+    let cancelled = false;
     const fetchQuestions = async () => {
+      setLoading(true);
       try {
-        const { data } = await api.get('/Questions');
-        setQuestions(data);
+        const params = examFilter ? { categoryId: examFilter } : {};
+        const { data } = await api.get('/Questions', { params });
+        if (!cancelled) { setQuestions(data); setPage(0); }
       } catch (err) {
         console.error('加载题目失败', err);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
     fetchQuestions();
-  }, []);
+    return () => { cancelled = true; };
+  }, [examFilter, examsLoaded]);
+
+  const changeFilter = (id) => {
+    setExamFilter(id);
+    try { if (id) localStorage.setItem('cq-exam', String(id)); } catch { /* ignore */ }
+  };
 
   const totalPages = Math.ceil(questions.length / PAGE_SIZE);
   const pageQuestions = questions.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
@@ -274,6 +303,14 @@ const AnalysisManager = () => {
       {/* 统计栏 */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-4 text-sm text-cq-sub">
+          {exams.length > 0 && (
+            <select value={examFilter} onChange={(e) => changeFilter(e.target.value)} className="cq-select">
+              <option value="">全部考试</option>
+              {exams.map((ex) => (
+                <option key={ex.id} value={ex.id}>{ex.name}</option>
+              ))}
+            </select>
+          )}
           <span>共 <span className="text-cq-ink font-semibold font-mono">{questions.length}</span> 题</span>
           <span className="flex items-center gap-1.5">
             <CheckCircle2 className="w-4 h-4 text-cq-ok" />
