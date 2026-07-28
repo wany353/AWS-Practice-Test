@@ -23,14 +23,18 @@ public class WrongAnswersController : ControllerBase
     private int GetUserId() =>
         int.Parse(User.FindFirstValue("uid")!);
 
-    // GET /api/WrongAnswers — 获取当前用户全部错题（含题目详情）
+    // GET /api/WrongAnswers?categoryId= — 获取当前用户错题（可按考试过滤，含题目详情）
     [HttpGet]
-    public async Task<IActionResult> GetWrongAnswers()
+    public async Task<IActionResult> GetWrongAnswers([FromQuery] int? categoryId)
     {
         var userId = GetUserId();
-        var records = await _context.WrongAnswers
+        var query = _context.WrongAnswers
             .Where(w => w.UserId == userId)
             .Include(w => w.Question)
+            .AsQueryable();
+        if (categoryId.HasValue) query = query.Where(w => w.Question != null && w.Question.CategoryId == categoryId.Value);
+
+        var records = await query
             .OrderByDescending(w => w.CreatedAt)
             .ToListAsync();
 
@@ -50,12 +54,15 @@ public class WrongAnswersController : ControllerBase
         return Ok(result);
     }
 
-    // GET /api/WrongAnswers/count — 获取错题总数
+    // GET /api/WrongAnswers/count?categoryId= — 获取错题总数（可按考试过滤）
     [HttpGet("count")]
-    public async Task<IActionResult> GetCount()
+    public async Task<IActionResult> GetCount([FromQuery] int? categoryId)
     {
         var userId = GetUserId();
-        var count = await _context.WrongAnswers.CountAsync(w => w.UserId == userId);
+        var query = _context.WrongAnswers.Where(w => w.UserId == userId);
+        if (categoryId.HasValue) query = query.Where(w => w.Question != null && w.Question.CategoryId == categoryId.Value);
+
+        var count = await query.CountAsync();
         return Ok(new { count });
     }
 

@@ -15,8 +15,16 @@ public class QuestionImportDto
     public string OptionsJson { get; set; } = string.Empty;
 }
 
+// 上传题库时携带考试名称 + 题目列表
+public class ImportRequestDto
+{
+    public string ExamName { get; set; } = string.Empty;
+    public List<QuestionImportDto> Questions { get; set; } = new();
+}
+
 public class TestSubmitDto
 {
+    public int? CategoryId { get; set; }
     public List<QuestionAnswerResponse> Answers { get; set; } = new();
 }
 

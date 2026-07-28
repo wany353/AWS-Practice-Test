@@ -17,7 +17,7 @@ namespace Backend.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.4")
+                .HasAnnotation("ProductVersion", "10.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -39,6 +39,9 @@ namespace Backend.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Name")
+                        .IsUnique();
+
                     b.ToTable("Categories");
                 });
 
@@ -57,6 +60,9 @@ namespace Backend.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int?>("CategoryId")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Content")
                         .IsRequired()
                         .HasColumnType("text");
@@ -71,6 +77,8 @@ namespace Backend.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CategoryId");
+
                     b.ToTable("Questions");
                 });
 
@@ -82,10 +90,16 @@ namespace Backend.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("CategoryId")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("Score")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Total")
                         .HasColumnType("integer");
 
                     b.Property<int>("UserId")
@@ -138,6 +152,9 @@ namespace Backend.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int?>("CategoryId")
+                        .HasColumnType("integer");
+
                     b.Property<int>("CurrentIndex")
                         .HasColumnType("integer");
 
@@ -149,7 +166,8 @@ namespace Backend.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId", "CategoryId")
+                        .IsUnique();
 
                     b.ToTable("PracticeProgresses");
                 });
@@ -182,6 +200,16 @@ namespace Backend.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("WrongAnswers");
+                });
+
+            modelBuilder.Entity("Backend.Models.Question", b =>
+                {
+                    b.HasOne("Backend.Models.Category", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Category");
                 });
 
             modelBuilder.Entity("Backend.Models.TestRecord", b =>

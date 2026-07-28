@@ -76,3 +76,31 @@
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: var(--cq-bg); }
 ::-webkit-scrollbar-thumb { background: var(--cq-line2); border-radius: 9999px; }
+
+/* 统一的下拉框样式：继承正文字体 + 自定义箭头 + 跟随主题 */
+.cq-select {
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--cq-ink);
+  background-color: var(--cq-panel);
+  border: 1px solid var(--cq-line);
+  border-radius: 10px;
+  padding: 8px 36px 8px 13px;
+  cursor: pointer;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23AC9C86' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 11px center;
+  background-size: 16px 16px;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+:root[data-theme="light"] .cq-select {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236E6152' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+}
+.cq-select:hover { border-color: var(--cq-line2); }
+.cq-select:focus { outline: none; border-color: var(--cq-acc); box-shadow: 0 0 0 2px var(--cq-acc-soft); }
+.cq-select option { background: var(--cq-surface); color: var(--cq-ink); }

@@ -100,6 +100,10 @@ export const PracticeMode = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // 考试（题库分类）
+  const [exams, setExams] = useState([]);
+  const [categoryId, setCategoryId] = useState('');
+
   // 已提交的答案 { [questionIndex]: string[] }
   const [answers, setAnswers] = useState({});
   // 当前题目正在选择（未提交）的选项
@@ -120,40 +124,72 @@ export const PracticeMode = () => {
   const debouncedIndex = useDebounce(currentIndex, 1500);
   const debouncedAnswers = useDebounce(answers, 1500);
 
-  // 加载题目 + 读取进度（不立即应用）
+  // 加载考试列表，默认选中上次的考试（cq-exam），否则第一个
   useEffect(() => {
+    api.get('/Categories')
+      .then(({ data }) => {
+        setExams(data);
+        if (data.length > 0) {
+          const saved = localStorage.getItem('cq-exam');
+          const valid = data.some(e => String(e.id) === saved);
+          setCategoryId(valid ? saved : String(data[0].id));
+        } else {
+          setLoading(false);
+        }
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  // 切换考试：记住选择
+  const selectExam = (id) => {
+    setCategoryId(id);
+    try { localStorage.setItem('cq-exam', String(id)); } catch { /* ignore */ }
+  };
+
+  // 按所选考试加载题目 + 该考试自己的进度，并弹出“继续/重新开始”选择
+  useEffect(() => {
+    if (!categoryId) return;
+    let cancelled = false;
+    readyToSave.current = false; // 加载期间暂停自动保存
     const fetchAll = async () => {
+      setLoading(true);
+      setError('');
       try {
         const [questionsRes, progressRes] = await Promise.all([
-          api.get('/Questions'),
-          api.get('/PracticeProgress').catch(() => null)
+          api.get('/Questions', { params: { categoryId } }),
+          api.get('/PracticeProgress', { params: { categoryId } }).catch(() => null)
         ]);
+        if (cancelled) return;
 
         const parsed = questionsRes.data.map(q => ({
           ...q,
           options: JSON.parse(q.optionsJson)
         }));
         setQuestions(parsed);
-
-        if (progressRes?.data) {
-          setSavedProgress(progressRes.data);
-        }
-        setShowModal(true); // 总是显示弹窗
+        // 加载/切换考试后，先清空本地作答状态（等用户在弹窗里选择继续或重来）
+        setCurrentIndex(0);
+        setAnswers({});
+        setSubmitted({});
+        setPendingSelection([]);
+        setSavedProgress(progressRes?.data || null);
+        setShowModal(true);
       } catch (err) {
-        setError('加载题库失败，请检查网络或联系管理员导入题目。');
+        if (!cancelled) setError('加载题库失败，请检查网络或联系管理员导入题目。');
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
     fetchAll();
-  }, []);
+    return () => { cancelled = true; };
+  }, [categoryId]);
 
-  // 自动保存进度（仅在用户做出选择后才激活）
+  // 自动保存进度（仅在用户做出选择后才激活，按考试分别保存）
   useEffect(() => {
-    if (questions.length === 0 || !readyToSave.current) return;
+    if (questions.length === 0 || !readyToSave.current || !categoryId) return;
     const save = async () => {
       try {
         await api.post('/PracticeProgress', {
+          categoryId: Number(categoryId),
           currentIndex: debouncedIndex,
           answersJson: JSON.stringify(debouncedAnswers)
         });
@@ -193,9 +229,9 @@ export const PracticeMode = () => {
     setShowModal(false);
     // 重新开始直接允许保存（空值是正确的）
     readyToSave.current = true;
-    // 清空服务器端进度
+    // 清空该考试的服务器端进度
     try {
-      await api.post('/PracticeProgress', { currentIndex: 0, answersJson: '{}' });
+      await api.post('/PracticeProgress', { categoryId: Number(categoryId), currentIndex: 0, answersJson: '{}' });
     } catch { /* 静默失败 */ }
   };
 
@@ -323,6 +359,18 @@ export const PracticeMode = () => {
                 {currentIndex + 1} / {questions.length}
               </span>
             </h1>
+            {exams.length > 0 && (
+              <select
+                value={categoryId}
+                onChange={(e) => selectExam(e.target.value)}
+                title="切换考试"
+                className="cq-select"
+              >
+                {exams.map((ex) => (
+                  <option key={ex.id} value={ex.id}>{ex.name}</option>
+                ))}
+              </select>
+            )}
             {saveStatus && (
               <span className="text-xs text-cq-ok animate-fade-in">{saveStatus}</span>
             )}

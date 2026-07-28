@@ -2,6 +2,7 @@ namespace Backend.DTOs;
 
 public class PracticeProgressDto
 {
+    public int? CategoryId { get; set; }
     public int CurrentIndex { get; set; }
     public string AnswersJson { get; set; } = "{}";
 }
