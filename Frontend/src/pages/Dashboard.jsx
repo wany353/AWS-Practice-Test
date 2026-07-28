@@ -12,33 +12,54 @@ export const Dashboard = () => {
   const [error, setError] = useState('');
   const [progress, setProgress] = useState(null);
   const [wrongCount, setWrongCount] = useState(0);
+  const [exams, setExams] = useState([]);
+  const [examFilter, setExamFilter] = useState(''); // '' = 全部考试
 
+  // 考试列表（筛选下拉）
   useEffect(() => {
+    api.get('/Categories').then(({ data }) => setExams(data)).catch(() => {});
+  }, []);
+
+  // 按考试筛选加载统计
+  useEffect(() => {
+    let cancelled = false;
     const fetchAll = async () => {
+      setLoading(true);
+      const params = examFilter ? { categoryId: examFilter } : {};
       try {
         const [historyRes, progressRes, wrongRes] = await Promise.allSettled([
-          api.get('/Questions/test-history'),
-          api.get('/PracticeProgress'),
-          api.get('/WrongAnswers/count')
+          api.get('/Questions/test-history', { params }),
+          examFilter ? api.get('/PracticeProgress', { params }) : Promise.resolve(null),
+          api.get('/WrongAnswers/count', { params })
         ]);
+        if (cancelled) return;
 
-        if (historyRes.status === 'fulfilled') setHistory(historyRes.value.data);
+        if (historyRes.status === 'fulfilled') { setHistory(historyRes.value.data); setError(''); }
         else setError('无法获取测试记录');
 
-        if (progressRes.status === 'fulfilled') {
+        // 「继续练习」只在选中某个具体考试时展示该考试的进度
+        if (examFilter && progressRes.status === 'fulfilled' && progressRes.value) {
           const p = progressRes.value.data;
           const hasProgress = p.currentIndex > 0 ||
             (p.answersJson && p.answersJson !== '{}' && p.answersJson !== 'null');
           setProgress(hasProgress ? p : null);
+        } else {
+          setProgress(null);
         }
 
         if (wrongRes.status === 'fulfilled') setWrongCount(wrongRes.value.data.count || 0);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
     fetchAll();
-  }, []);
+    return () => { cancelled = true; };
+  }, [examFilter]);
+
+  const changeFilter = (id) => {
+    setExamFilter(id);
+    try { if (id) localStorage.setItem('cq-exam', String(id)); } catch { /* ignore */ }
+  };
 
   const highestScore = history.length > 0 ? Math.max(...history.map(h => h.score)) : 0;
   const totalTests = history.length;
@@ -50,6 +71,21 @@ export const Dashboard = () => {
         <div>
           <h1 className="font-display text-3xl font-bold text-cq-ink mb-2 tracking-tight">你好, {user?.username}</h1>
           <p className="text-cq-sub">准备好继续你的 AWS 云认证学习之旅了吗？</p>
+          {exams.length > 0 && (
+            <div className="mt-3 flex items-center gap-2">
+              <span className="text-xs text-cq-faint font-semibold">按考试查看</span>
+              <select
+                value={examFilter}
+                onChange={(e) => changeFilter(e.target.value)}
+                className="px-3 py-1.5 rounded-lg bg-cq-panel border border-cq-line text-cq-ink text-sm focus:outline-none focus:ring-2 focus:ring-cq-acc transition"
+              >
+                <option value="">全部考试</option>
+                {exams.map((ex) => (
+                  <option key={ex.id} value={ex.id}>{ex.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
         <div className="mt-4 md:mt-0 flex gap-4 flex-wrap">
           {progress ? (

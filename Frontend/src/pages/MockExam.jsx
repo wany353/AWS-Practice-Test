@@ -21,16 +21,26 @@ export const MockExam = () => {
   const [scoreResult, setScoreResult] = useState(null);
   const navigate = useNavigate();
 
-  // 加载考试列表，默认选中第一个
+  // 加载考试列表，默认选中上次的考试（cq-exam），否则第一个
   useEffect(() => {
     api.get('/Categories')
       .then(({ data }) => {
         setExams(data);
-        if (data.length > 0) setCategoryId(String(data[0].id));
-        else setLoading(false);
+        if (data.length > 0) {
+          const saved = localStorage.getItem('cq-exam');
+          const valid = data.some(e => String(e.id) === saved);
+          setCategoryId(valid ? saved : String(data[0].id));
+        } else {
+          setLoading(false);
+        }
       })
       .catch(() => setLoading(false));
   }, []);
+
+  const selectExam = (id) => {
+    setCategoryId(id);
+    try { localStorage.setItem('cq-exam', String(id)); } catch { /* ignore */ }
+  };
 
   // 按所选考试抽取 65 题，切换考试即重置一场新考试
   useEffect(() => {
@@ -104,6 +114,7 @@ export const MockExam = () => {
     
     // Formatting answers for API
     const submissionData = {
+      CategoryId: categoryId ? Number(categoryId) : null,
       Answers: Object.keys(answers).map(questionId => ({
         QuestionId: parseInt(questionId),
         UserAnswer: answers[questionId].join(', ')
@@ -148,7 +159,7 @@ export const MockExam = () => {
           {exams.length > 0 && (
             <select
               value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
+              onChange={(e) => selectExam(e.target.value)}
               title="切换考试"
               className="px-3 py-1.5 rounded-lg bg-cq-panel border border-cq-line text-cq-ink text-sm focus:outline-none focus:ring-2 focus:ring-cq-acc transition"
             >

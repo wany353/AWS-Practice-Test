@@ -103,7 +103,6 @@ export const PracticeMode = () => {
   // 考试（题库分类）
   const [exams, setExams] = useState([]);
   const [categoryId, setCategoryId] = useState('');
-  const initializedRef = useRef(false);
 
   // 已提交的答案 { [questionIndex]: string[] }
   const [answers, setAnswers] = useState({});
@@ -125,28 +124,40 @@ export const PracticeMode = () => {
   const debouncedIndex = useDebounce(currentIndex, 1500);
   const debouncedAnswers = useDebounce(answers, 1500);
 
-  // 加载考试列表，默认选中第一个
+  // 加载考试列表，默认选中上次的考试（cq-exam），否则第一个
   useEffect(() => {
     api.get('/Categories')
       .then(({ data }) => {
         setExams(data);
-        if (data.length > 0) setCategoryId(String(data[0].id));
-        else setLoading(false);
+        if (data.length > 0) {
+          const saved = localStorage.getItem('cq-exam');
+          const valid = data.some(e => String(e.id) === saved);
+          setCategoryId(valid ? saved : String(data[0].id));
+        } else {
+          setLoading(false);
+        }
       })
       .catch(() => setLoading(false));
   }, []);
 
-  // 按所选考试加载题目（首次进入读取进度并弹窗；切换考试时重置为该考试的新一轮）
+  // 切换考试：记住选择
+  const selectExam = (id) => {
+    setCategoryId(id);
+    try { localStorage.setItem('cq-exam', String(id)); } catch { /* ignore */ }
+  };
+
+  // 按所选考试加载题目 + 该考试自己的进度，并弹出“继续/重新开始”选择
   useEffect(() => {
     if (!categoryId) return;
     let cancelled = false;
+    readyToSave.current = false; // 加载期间暂停自动保存
     const fetchAll = async () => {
       setLoading(true);
       setError('');
       try {
         const [questionsRes, progressRes] = await Promise.all([
           api.get('/Questions', { params: { categoryId } }),
-          initializedRef.current ? Promise.resolve(null) : api.get('/PracticeProgress').catch(() => null)
+          api.get('/PracticeProgress', { params: { categoryId } }).catch(() => null)
         ]);
         if (cancelled) return;
 
@@ -155,19 +166,13 @@ export const PracticeMode = () => {
           options: JSON.parse(q.optionsJson)
         }));
         setQuestions(parsed);
-        // 切换/加载考试后，本地作答状态重置
+        // 加载/切换考试后，先清空本地作答状态（等用户在弹窗里选择继续或重来）
         setCurrentIndex(0);
         setAnswers({});
         setSubmitted({});
         setPendingSelection([]);
-
-        if (!initializedRef.current) {
-          if (progressRes?.data) setSavedProgress(progressRes.data);
-          setShowModal(true); // 首次进入显示选择弹窗
-          initializedRef.current = true;
-        } else {
-          readyToSave.current = true; // 切换考试后允许继续自动保存
-        }
+        setSavedProgress(progressRes?.data || null);
+        setShowModal(true);
       } catch (err) {
         if (!cancelled) setError('加载题库失败，请检查网络或联系管理员导入题目。');
       } finally {
@@ -178,12 +183,13 @@ export const PracticeMode = () => {
     return () => { cancelled = true; };
   }, [categoryId]);
 
-  // 自动保存进度（仅在用户做出选择后才激活）
+  // 自动保存进度（仅在用户做出选择后才激活，按考试分别保存）
   useEffect(() => {
-    if (questions.length === 0 || !readyToSave.current) return;
+    if (questions.length === 0 || !readyToSave.current || !categoryId) return;
     const save = async () => {
       try {
         await api.post('/PracticeProgress', {
+          categoryId: Number(categoryId),
           currentIndex: debouncedIndex,
           answersJson: JSON.stringify(debouncedAnswers)
         });
@@ -223,9 +229,9 @@ export const PracticeMode = () => {
     setShowModal(false);
     // 重新开始直接允许保存（空值是正确的）
     readyToSave.current = true;
-    // 清空服务器端进度
+    // 清空该考试的服务器端进度
     try {
-      await api.post('/PracticeProgress', { currentIndex: 0, answersJson: '{}' });
+      await api.post('/PracticeProgress', { categoryId: Number(categoryId), currentIndex: 0, answersJson: '{}' });
     } catch { /* 静默失败 */ }
   };
 
@@ -356,7 +362,7 @@ export const PracticeMode = () => {
             {exams.length > 0 && (
               <select
                 value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
+                onChange={(e) => selectExam(e.target.value)}
                 title="切换考试"
                 className="px-3 py-1.5 rounded-lg bg-cq-panel border border-cq-line text-cq-ink text-sm focus:outline-none focus:ring-2 focus:ring-cq-acc transition"
               >

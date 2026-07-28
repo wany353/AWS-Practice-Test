@@ -9,11 +9,19 @@ export const WrongAnswers = () => {
   const [error, setError] = useState('');
   const [expanded, setExpanded] = useState({});
   const [removing, setRemoving] = useState({});
+  const [exams, setExams] = useState([]);
+  const [examFilter, setExamFilter] = useState(''); // '' = 全部考试
+
+  useEffect(() => {
+    api.get('/Categories').then(({ data }) => setExams(data)).catch(() => {});
+  }, []);
 
   const fetchWrongAnswers = async () => {
     setLoading(true);
+    setError('');
     try {
-      const { data } = await api.get('/WrongAnswers');
+      const params = examFilter ? { categoryId: examFilter } : {};
+      const { data } = await api.get('/WrongAnswers', { params });
       const parsed = data.map(w => ({
         ...w,
         options: JSON.parse(w.optionsJson || '[]'),
@@ -29,7 +37,13 @@ export const WrongAnswers = () => {
 
   useEffect(() => {
     fetchWrongAnswers();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [examFilter]);
+
+  const changeFilter = (id) => {
+    setExamFilter(id);
+    try { if (id) localStorage.setItem('cq-exam', String(id)); } catch { /* ignore */ }
+  };
 
   const toggleExpand = (id) => {
     setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
@@ -65,13 +79,27 @@ export const WrongAnswers = () => {
             共 <span className="text-cq-bad font-semibold">{wrongList.length}</span> 道错题
           </p>
         </div>
-        <button
-          onClick={fetchWrongAnswers}
-          className="flex items-center gap-2 px-4 py-2 bg-cq-panel hover:bg-cq-panel2 text-cq-sub rounded-xl transition"
-        >
-          <RefreshCw className="w-4 h-4" />
-          刷新
-        </button>
+        <div className="flex items-center gap-3">
+          {exams.length > 0 && (
+            <select
+              value={examFilter}
+              onChange={(e) => changeFilter(e.target.value)}
+              className="px-3 py-2 rounded-xl bg-cq-panel border border-cq-line text-cq-ink text-sm focus:outline-none focus:ring-2 focus:ring-cq-acc transition"
+            >
+              <option value="">全部考试</option>
+              {exams.map((ex) => (
+                <option key={ex.id} value={ex.id}>{ex.name}</option>
+              ))}
+            </select>
+          )}
+          <button
+            onClick={fetchWrongAnswers}
+            className="flex items-center gap-2 px-4 py-2 bg-cq-panel hover:bg-cq-panel2 text-cq-sub rounded-xl transition"
+          >
+            <RefreshCw className="w-4 h-4" />
+            刷新
+          </button>
+        </div>
       </div>
 
       {error && (
