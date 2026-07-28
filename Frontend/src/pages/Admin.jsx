@@ -78,7 +78,10 @@ const UploadSection = () => {
     try {
       const questions = fileContent.map((item) => {
         let type = 'Single';
-        const cleanAnswer = item.answer ? item.answer.replace(/[^A-Z]/g, '') : '';
+        // 兼容 correct_answer(数组 ["A","C"])与 answer(字符串 "A"/"A, C")
+        const rawAns = item.correct_answer ?? item.answer ?? '';
+        const cleanAnswer = (Array.isArray(rawAns) ? rawAns.join('') : String(rawAns))
+          .toUpperCase().replace(/[^A-Z]/g, '');
         if (cleanAnswer.length > 1) type = 'Multiple';
         let optionsList = [];
         if (item.options) {
