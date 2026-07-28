@@ -345,10 +345,11 @@ const AnalysisManager = () => {
 
       {/* 题目列表 */}
       <div className="space-y-3">
-        {pageQuestions.map((q) => {
+        {pageQuestions.map((q, localIdx) => {
           const isEditing = editingId === q.id;
           const hasAnalysis = hasRealAnalysis(q.analysis);
           const status = saveStatus[q.id];
+          const seq = page * PAGE_SIZE + localIdx + 1; // 考试内顺序号（非数据库 ID）
 
           return (
             <div
@@ -363,7 +364,7 @@ const AnalysisManager = () => {
               <div className="flex items-start gap-3 p-4">
                 {/* 序号 + 状态点 */}
                 <div className="flex flex-col items-center gap-1 flex-shrink-0 pt-0.5">
-                  <span className="text-xs font-mono text-cq-faint leading-none">#{q.id}</span>
+                  <span className="text-xs font-mono text-cq-faint leading-none" title={`数据库 ID: ${q.id}`}>#{seq}</span>
                   <div className={`w-2 h-2 rounded-full mt-1 ${hasAnalysis ? 'bg-cq-ok' : 'bg-cq-faint'}`}
                     title={hasAnalysis ? '已有解析' : '暂无解析'} />
                 </div>
