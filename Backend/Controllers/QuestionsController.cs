@@ -125,7 +125,8 @@ public class QuestionsController : ControllerBase
         {
             UserId = userId,
             CategoryId = testSubmit.CategoryId,
-            Score = score
+            Score = score,
+            Total = questions.Count
         };
 
         _context.TestRecords.Add(record);
