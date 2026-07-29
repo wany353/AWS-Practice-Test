@@ -4,7 +4,7 @@ import api from '../utils/api';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
-import { Clock, AlertTriangle, UserCheck, XOctagon, Trophy, Target, BarChart3, BookOpen } from 'lucide-react';
+import { Clock, AlertTriangle, UserCheck, XOctagon, Trophy, Target, BarChart3, BookOpen, Play, Pause, Flag } from 'lucide-react';
 
 export const MockExam = () => {
   const [questions, setQuestions] = useState([]);
@@ -19,6 +19,7 @@ export const MockExam = () => {
   const [timeLeft, setTimeLeft] = useState(60 * 60); // 1 hour test
   const [submitted, setSubmitted] = useState(false);
   const [scoreResult, setScoreResult] = useState(null);
+  const [phase, setPhase] = useState('idle'); // 'idle' | 'running' | 'paused'
   const navigate = useNavigate();
 
   // 加载考试列表，默认选中上次的考试（cq-exam），否则第一个
@@ -63,6 +64,7 @@ export const MockExam = () => {
         setSubmitted(false);
         setScoreResult(null);
         setTimeLeft(60 * 60);
+        setPhase('idle'); // 换考试后回到“开始”界面，不自动开考
       } catch (err) {
         if (!cancelled) setError('无法加载考题。');
       } finally {
@@ -74,8 +76,8 @@ export const MockExam = () => {
   }, [categoryId]);
 
   useEffect(() => {
-    if (loading || submitted || error) return;
-    
+    if (phase !== 'running' || submitted || error) return;
+
     const timer = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
@@ -87,10 +89,10 @@ export const MockExam = () => {
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, [loading, submitted, answers]);
+  }, [phase, submitted, error, answers]);
 
   const handleOptionSelect = (qIndex, opt) => {
-    if (submitted) return;
+    if (submitted || phase !== 'running') return;
     const q = questions[qIndex];
     const isMulti = q.type.includes('Multiple');
     const existing = answers[q.id] || [];
@@ -130,6 +132,19 @@ export const MockExam = () => {
     }
   };
 
+  const startExam = () => setPhase('running');
+  const pauseExam = () => setPhase('paused');
+  const resumeExam = () => setPhase('running');
+  const giveUp = () => {
+    if (!window.confirm('确定放弃本次考试吗？当前作答不会保存。')) return;
+    setAnswers({});
+    setSubmitted(false);
+    setScoreResult(null);
+    setTimeLeft(60 * 60);
+    setPhase('idle');
+    try { window.scrollTo(0, 0); } catch { /* ignore */ }
+  };
+
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
@@ -141,48 +156,86 @@ export const MockExam = () => {
 
   return (
     <div className="max-w-4xl mx-auto pb-32">
-      {/* Sticky Top Bar for Timer & Submit button */}
+      {phase === 'idle' && !scoreResult ? (
+        /* ===== 开始界面（不自动开考）===== */
+        <div className="max-w-xl mx-auto mt-6 bg-cq-surface border border-cq-line rounded-2xl p-8 md:p-10 shadow-cq-card text-center">
+          <div className="w-16 h-16 rounded-2xl bg-cq-acc-soft flex items-center justify-center mx-auto mb-5">
+            <Target className="w-8 h-8 text-cq-acc" />
+          </div>
+          <h2 className="font-display text-2xl font-bold text-cq-ink mb-2">全真模拟考试</h2>
+          <p className="text-cq-sub text-sm mb-6">开始后计时，中途可暂停或放弃。准备好了就开始吧！</p>
+          {exams.length > 0 && (
+            <div className="flex items-center justify-center gap-2 mb-6">
+              <span className="text-sm text-cq-faint">考试</span>
+              <select value={categoryId} onChange={(e) => selectExam(e.target.value)} className="cq-select">
+                {exams.map((ex) => (
+                  <option key={ex.id} value={ex.id}>{ex.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          <div className="grid grid-cols-3 gap-3 mb-7">
+            <div className="bg-cq-panel border border-cq-line rounded-xl py-3">
+              <div className="font-display text-xl font-bold text-cq-ink">{questions.length}</div>
+              <div className="text-xs text-cq-faint mt-0.5">题目</div>
+            </div>
+            <div className="bg-cq-panel border border-cq-line rounded-xl py-3">
+              <div className="font-display text-xl font-bold text-cq-ink">60</div>
+              <div className="text-xs text-cq-faint mt-0.5">分钟</div>
+            </div>
+            <div className="bg-cq-panel border border-cq-line rounded-xl py-3">
+              <div className="font-display text-xl font-bold text-cq-ink">70%</div>
+              <div className="text-xs text-cq-faint mt-0.5">通过线</div>
+            </div>
+          </div>
+          <button onClick={startExam} className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-br from-cq-coral to-cq-amber text-cq-on-accent font-bold shadow-cq-accent hover:brightness-110 transition">
+            <Play className="w-5 h-5" /> 开始考试
+          </button>
+        </div>
+      ) : (
+      <>
+      {!scoreResult && (
+      /* Sticky Top Bar for Timer & controls */
       <div className="sticky top-20 z-40 bg-cq-surface backdrop-blur-md border border-cq-line rounded-2xl p-4 flex justify-between items-center mb-8 shadow-cq-card">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-cq-acc-soft rounded-lg">
             <Clock className="w-6 h-6 text-cq-acc" />
           </div>
           <div>
-            <p className="text-xs text-cq-sub font-medium tracking-wide">剩余时间</p>
-            <p className={`text-xl font-mono font-bold ${timeLeft < 300 ? 'text-cq-bad animate-pulse' : 'text-cq-ink'}`}>
+            <p className="text-xs text-cq-sub font-medium tracking-wide">{phase === 'paused' ? '已暂停' : '剩余时间'}</p>
+            <p className={`text-xl font-mono font-bold ${phase === 'paused' ? 'text-cq-faint' : timeLeft < 300 ? 'text-cq-bad animate-pulse' : 'text-cq-ink'}`}>
               {formatTime(timeLeft)}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          {exams.length > 0 && (
-            <select
-              value={categoryId}
-              onChange={(e) => selectExam(e.target.value)}
-              title="切换考试"
-              className="cq-select"
-            >
-              {exams.map((ex) => (
-                <option key={ex.id} value={ex.id}>{ex.name}</option>
-              ))}
-            </select>
-          )}
+        <div className="flex items-center gap-2 sm:gap-3">
           <span className="text-sm text-cq-sub hidden sm:block">
             已答: {Object.keys(answers).length} / {questions.length}
           </span>
-          {!submitted && (
-            <button
-              onClick={() => {
-                if(window.confirm('确定要提交试卷吗？未答完的题目将记为0分。')) handleSubmit();
-              }}
-              className="px-6 py-2 bg-gradient-to-br from-cq-coral to-cq-amber text-cq-on-accent font-semibold rounded-xl transition duration-300 shadow-cq-accent hover:brightness-110"
-            >
-              提交考卷
+          {phase === 'running' ? (
+            <button onClick={pauseExam} title="暂停" className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-cq-panel hover:bg-cq-panel2 border border-cq-line text-cq-ink text-sm font-medium transition">
+              <Pause className="w-4 h-4" /> 暂停
+            </button>
+          ) : (
+            <button onClick={resumeExam} title="继续" className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-cq-panel hover:bg-cq-panel2 border border-cq-line text-cq-ink text-sm font-medium transition">
+              <Play className="w-4 h-4" /> 继续
             </button>
           )}
+          <button onClick={giveUp} title="放弃本次考试" className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-cq-bad-soft border border-cq-bad text-cq-bad text-sm font-medium transition">
+            <Flag className="w-4 h-4" /> 放弃
+          </button>
+          <button
+            onClick={() => {
+              if(window.confirm('确定要提交试卷吗？未答完的题目将记为0分。')) handleSubmit();
+            }}
+            className="px-5 py-2 bg-gradient-to-br from-cq-coral to-cq-amber text-cq-on-accent font-semibold rounded-xl transition duration-300 shadow-cq-accent hover:brightness-110"
+          >
+            交卷
+          </button>
         </div>
       </div>
+      )}
 
       {scoreResult && (() => {
         const score = scoreResult.score;
@@ -264,7 +317,19 @@ export const MockExam = () => {
         );
       })()}
 
-      {/* Questions list */}
+      {/* 暂停时隐藏题目，显示遮罩 */}
+      {phase === 'paused' && !scoreResult ? (
+        <div className="bg-cq-surface border border-cq-line rounded-2xl p-12 text-center shadow-cq-card">
+          <div className="w-16 h-16 rounded-2xl bg-cq-acc-soft flex items-center justify-center mx-auto mb-4">
+            <Pause className="w-8 h-8 text-cq-acc" />
+          </div>
+          <h3 className="font-display text-xl font-bold text-cq-ink mb-2">考试已暂停</h3>
+          <p className="text-cq-sub text-sm mb-6">计时已停止，题目已隐藏。点击继续回到考试。</p>
+          <button onClick={resumeExam} className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-br from-cq-coral to-cq-amber text-cq-on-accent font-bold shadow-cq-accent hover:brightness-110 transition">
+            <Play className="w-5 h-5" /> 继续考试
+          </button>
+        </div>
+      ) : (
       <div className="space-y-12">
         {questions.map((q, idx) => (
           <div key={q.id} className="bg-cq-surface border border-cq-line rounded-2xl p-6 md:p-8 shadow-cq-card scroll-mt-32" id={`question-${idx}`}>
@@ -326,6 +391,9 @@ export const MockExam = () => {
           </div>
         ))}
       </div>
+      )}
+      </>
+      )}
     </div>
   );
 };
