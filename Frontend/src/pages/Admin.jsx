@@ -245,6 +245,62 @@ const AnalysisManager = () => {
     try { if (id) localStorage.setItem('cq-exam', String(id)); } catch { /* ignore */ }
   };
 
+  // ===== 批量导入解析 =====
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState(null);
+
+  const handleImportAnalysis = (e) => {
+    const file = e.target.files[0];
+    e.target.value = '';           // 允许重复选择同一文件
+    if (!file) return;
+    if (!examFilter) {
+      setImportResult({ type: 'error', message: '请先在上方选择一个具体考试（不能是「全部考试」）' });
+      return;
+    }
+    setImportResult(null);
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      let raw;
+      try {
+        raw = JSON.parse(ev.target.result);
+        if (!Array.isArray(raw)) throw new Error('not array');
+      } catch {
+        setImportResult({ type: 'error', message: '不是合法的 JSON 数组文件' });
+        return;
+      }
+      // 兼容 correct_answer / correctAnswer、explanation / analysis
+      const items = raw.map((it) => ({
+        number: Number(it.number ?? it.index ?? 0),
+        correctAnswer: String(it.correct_answer ?? it.correctAnswer ?? it.answer ?? ''),
+        explanation: String(it.explanation ?? it.analysis ?? ''),
+      })).filter((it) => it.number > 0 && it.explanation);
+
+      if (items.length === 0) {
+        setImportResult({ type: 'error', message: '文件中没有可用的解析（需要 number + explanation 字段）' });
+        return;
+      }
+
+      setImporting(true);
+      try {
+        const { data } = await api.post('/Questions/import-analysis', {
+          categoryId: Number(examFilter),
+          skipMismatch: true,
+          items,
+        });
+        setImportResult({ type: 'success', message: data.message, detail: data });
+        // 重新拉取列表，刷新「已有解析」统计
+        const params = examFilter ? { categoryId: examFilter } : {};
+        const res = await api.get('/Questions', { params });
+        setQuestions(res.data);
+      } catch (err) {
+        setImportResult({ type: 'error', message: err.response?.data || '导入失败，请检查文件格式与网络' });
+      } finally {
+        setImporting(false);
+      }
+    };
+    reader.readAsText(file);
+  };
+
   const totalPages = Math.ceil(questions.length / PAGE_SIZE);
   const pageQuestions = questions.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
@@ -320,6 +376,21 @@ const AnalysisManager = () => {
             <Circle className="w-4 h-4 text-cq-faint" />
             待补充 <span className="text-cq-ink font-semibold">{questions.filter(q => !hasRealAnalysis(q.analysis)).length}</span>
           </span>
+          <label className={`relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${
+            importing || !examFilter
+              ? 'border-cq-line bg-cq-panel text-cq-faint cursor-not-allowed'
+              : 'border-cq-acc bg-cq-acc-soft text-cq-acc cursor-pointer hover:brightness-110'
+          }`} title={examFilter ? '批量导入解析 JSON' : '请先选择具体考试'}>
+            {importing ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <UploadCloud className="w-3.5 h-3.5" />}
+            {importing ? '导入中…' : '批量导入解析'}
+            <input
+              type="file"
+              accept=".json"
+              disabled={importing || !examFilter}
+              onChange={handleImportAnalysis}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+            />
+          </label>
         </div>
         {/* 分页 */}
         <div className="flex items-center gap-2">
@@ -342,6 +413,39 @@ const AnalysisManager = () => {
           </button>
         </div>
       </div>
+
+      {/* 批量导入结果 */}
+      {importResult && (
+        <div className={`mb-5 p-4 rounded-xl border flex items-start gap-3 ${
+          importResult.type === 'success'
+            ? 'bg-cq-ok-soft border-cq-ok text-cq-ok'
+            : 'bg-cq-bad-soft border-cq-bad text-cq-bad'
+        }`}>
+          {importResult.type === 'success'
+            ? <CheckCircle className="w-5 h-5 shrink-0 mt-0.5" />
+            : <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />}
+          <div className="flex-1 min-w-0">
+            <h4 className="font-bold text-sm">{importResult.type === 'success' ? '导入完成' : '导入失败'}</h4>
+            <p className="opacity-90 mt-0.5 text-sm">{String(importResult.message)}</p>
+            {importResult.detail && (
+              <div className="mt-2 text-xs text-cq-sub flex flex-wrap gap-x-4 gap-y-1 font-mono">
+                <span>文件 {importResult.detail.total} 条</span>
+                <span>题库 {importResult.detail.dbCount} 题</span>
+                <span className="text-cq-ok">已更新 {importResult.detail.updated}</span>
+                {importResult.detail.mismatch > 0 && <span className="text-cq-bad">答案不匹配跳过 {importResult.detail.mismatch}</span>}
+                {importResult.detail.outOfRange > 0 && <span className="text-cq-faint">超出范围 {importResult.detail.outOfRange}</span>}
+              </div>
+            )}
+            {importResult.detail?.mismatchSample?.length > 0 && (
+              <p className="mt-1.5 text-xs text-cq-faint">
+                不匹配题号示例：{importResult.detail.mismatchSample.join(', ')}
+                {importResult.detail.mismatch > importResult.detail.mismatchSample.length ? ' …' : ''}
+              </p>
+            )}
+          </div>
+          <button onClick={() => setImportResult(null)} className="shrink-0 text-cq-faint hover:text-cq-ink"><X className="w-4 h-4" /></button>
+        </div>
+      )}
 
       {/* 题目列表 */}
       <div className="space-y-3">

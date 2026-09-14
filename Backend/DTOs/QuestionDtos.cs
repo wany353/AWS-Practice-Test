@@ -33,3 +33,18 @@ public class QuestionAnswerResponse
     public int QuestionId { get; set; }
     public string UserAnswer { get; set; } = string.Empty;
 }
+
+// 批量导入解析
+public class AnalysisImportItemDto
+{
+    public int Number { get; set; }
+    public string? CorrectAnswer { get; set; }
+    public string? Explanation { get; set; }
+}
+
+public class AnalysisImportRequestDto
+{
+    public int? CategoryId { get; set; }
+    public bool SkipMismatch { get; set; } = true;
+    public List<AnalysisImportItemDto> Items { get; set; } = new();
+}

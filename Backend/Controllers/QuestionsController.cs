@@ -5,6 +5,7 @@ using Backend.Data;
 using Backend.DTOs;
 using Backend.Models;
 using System.Security.Claims;
+using System.Linq;
 
 namespace Backend.Controllers;
 
@@ -133,6 +134,58 @@ public class QuestionsController : ControllerBase
         await _context.SaveChangesAsync();
 
         return Ok(new { Score = score, TotalQuestions = questions.Count });
+    }
+
+
+    // 归一化答案字母：只保留 A-Z 并排序，便于比较 "A, C" / "ca" / "AC"
+    private static string NormalizeAnswer(string? s) =>
+        string.IsNullOrEmpty(s) ? "" : new string(s.ToUpperInvariant().Where(char.IsLetter).OrderBy(c => c).ToArray());
+
+    // 批量导入解析：按“考试内序号”匹配（题库导入时按文件顺序插入），并用 correct_answer 校验对齐
+    [HttpPost("import-analysis")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> ImportAnalysis([FromBody] AnalysisImportRequestDto request)
+    {
+        if (request?.Items == null || request.Items.Count == 0) return BadRequest("解析数据为空");
+
+        var query = _context.Questions.AsQueryable();
+        if (request.CategoryId.HasValue) query = query.Where(q => q.CategoryId == request.CategoryId.Value);
+        var questions = await query.OrderBy(q => q.Id).ToListAsync();
+        if (questions.Count == 0) return BadRequest("该考试下没有题目，请先上传题库");
+
+        int updated = 0, mismatch = 0, outOfRange = 0, empty = 0;
+        var mismatchSample = new List<int>();
+
+        foreach (var item in request.Items)
+        {
+            var idx = item.Number - 1;
+            if (idx < 0 || idx >= questions.Count) { outOfRange++; continue; }
+            if (string.IsNullOrWhiteSpace(item.Explanation)) { empty++; continue; }
+
+            var q = questions[idx];
+            var expect = NormalizeAnswer(item.CorrectAnswer);
+            var actual = NormalizeAnswer(q.Answer);
+            if (expect.Length > 0 && expect != actual)
+            {
+                mismatch++;
+                if (mismatchSample.Count < 20) mismatchSample.Add(item.Number);
+                if (request.SkipMismatch) continue;
+            }
+
+            q.Analysis = item.Explanation;
+            updated++;
+        }
+
+        await _context.SaveChangesAsync();
+
+        return Ok(new
+        {
+            message = $"已更新 {updated} 条解析" + (mismatch > 0 ? $"，{mismatch} 条因答案不匹配被跳过" : ""),
+            updated, mismatch, outOfRange, empty,
+            total = request.Items.Count,
+            dbCount = questions.Count,
+            mismatchSample
+        });
     }
 
     [HttpGet("test-history")]
