@@ -1,33 +1,35 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useI18n } from '../context/I18nContext';
 import api from '../utils/api';
 import { Target, TrendingUp, Clock, AlertCircle, BookOpen, ArrowRight, XCircle, PlayCircle, CheckCircle, Percent } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 export const Dashboard = () => {
   const { user } = useAuth();
+  const { t, tr, locale } = useI18n();
   const navigate = useNavigate();
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [wrongCount, setWrongCount] = useState(0);
   const [exams, setExams] = useState([]);
-  const [examFilter, setExamFilter] = useState(''); // '' = 全部考试
-  // 圆环所反映的“当前考试”的刷题进度
+  const [examFilter, setExamFilter] = useState(''); // '' = all exams
+  // Practice progress of the "current exam" shown in the ring
   const [progressInfo, setProgressInfo] = useState({ answered: 0, total: 0, currentIndex: 0, hasProgress: false, examName: '' });
 
-  // 考试列表（筛选下拉）
+  // Exam list for the filter dropdown
   useEffect(() => {
     api.get('/Categories').then(({ data }) => setExams(data)).catch(() => {});
   }, []);
 
-  // 统计（按筛选）+ 当前考试的刷题进度（给圆环）
+  // Stats (by filter) + practice progress of the current exam (for the ring)
   useEffect(() => {
     let cancelled = false;
     const fetchAll = async () => {
       setLoading(true);
       const params = examFilter ? { categoryId: examFilter } : {};
-      // 圆环反映的考试：筛选优先；否则用上次学习的考试（cq-exam），再否则第一个
+      // Ring exam: the filter first; otherwise the last studied exam (cq-exam); otherwise the first exam
       let activeExamId = examFilter;
       if (!activeExamId) {
         const saved = localStorage.getItem('cq-exam');
@@ -42,7 +44,7 @@ export const Dashboard = () => {
         if (cancelled) return;
 
         if (historyRes.status === 'fulfilled') { setHistory(historyRes.value.data); setError(''); }
-        else setError('无法获取测试记录');
+        else setError('dashboard.loadHistoryFailed');
         if (wrongRes.status === 'fulfilled') setWrongCount(wrongRes.value.data.count || 0);
 
         const exam = exams.find(e => String(e.id) === String(activeExamId));
@@ -56,7 +58,7 @@ export const Dashboard = () => {
           hasProgress = currentIndex > 0 || answered > 0;
         }
         setProgressInfo({ answered, total, currentIndex, hasProgress, examName: exam?.name || '' });
-        // 让“继续练习/开始刷题”打开的正是圆环所示考试
+        // Make "Continue / Start practice" open the exam shown in the ring
         try { if (activeExamId) localStorage.setItem('cq-exam', String(activeExamId)); } catch { /* ignore */ }
       } finally {
         if (!cancelled) setLoading(false);
@@ -73,35 +75,35 @@ export const Dashboard = () => {
 
   const totalTests = history.length;
   const highestScore = totalTests > 0 ? Math.max(...history.map(h => h.score)) : 0;
-  // 只用记录了总题数的模考来算正确率（老数据 total 为 0，跳过）
+  // Accuracy only uses records that stored a total (legacy rows have total = 0)
   const accRecords = history.filter(h => h.total > 0);
   const acc = (h) => Math.round((h.score / h.total) * 100);
   const avgAccuracy = accRecords.length ? Math.round(accRecords.reduce((s, h) => s + acc(h), 0) / accRecords.length) : 0;
   const latestAccuracy = accRecords.length ? acc(accRecords[0]) : 0;
   const passCount = accRecords.filter(h => acc(h) >= 70).length;
-  // 圆环：当前考试的刷题进度
+  // Ring: practice progress for the current exam
   const progressPercent = progressInfo.total > 0 ? Math.round((progressInfo.answered / progressInfo.total) * 100) : 0;
   const ringDash = ((progressPercent / 100) * 364.4).toFixed(1);
   const currentExamName = examFilter
-    ? (exams.find(e => String(e.id) === String(examFilter))?.name || '所选考试')
-    : '全部考试';
+    ? (exams.find(e => String(e.id) === String(examFilter))?.name || t('dashboard.selectedExam'))
+    : t('common.allExams');
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 animate-fade-in-up">
-      {/* 主横幅 */}
+      {/* Header banner */}
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center py-6 bg-cq-surface backdrop-blur-md rounded-2xl p-8 border border-cq-line shadow-cq-card">
         <div>
-          <h1 className="font-display text-3xl font-bold text-cq-ink mb-2 tracking-tight">你好, {user?.username}</h1>
-          <p className="text-cq-sub">准备好继续你的 AWS 云认证学习之旅了吗？</p>
+          <h1 className="font-display text-3xl font-bold text-cq-ink mb-2 tracking-tight">{t('dashboard.greeting', { name: user?.username })}</h1>
+          <p className="text-cq-sub">{t('dashboard.tagline')}</p>
           {exams.length > 0 && (
             <div className="mt-3 flex items-center gap-2">
-              <span className="text-xs text-cq-faint font-semibold">按考试查看</span>
+              <span className="text-xs text-cq-faint font-semibold">{t('dashboard.viewByExam')}</span>
               <select
                 value={examFilter}
                 onChange={(e) => changeFilter(e.target.value)}
                 className="cq-select"
               >
-                <option value="">全部考试</option>
+                <option value="">{t('common.allExams')}</option>
                 {exams.map((ex) => (
                   <option key={ex.id} value={ex.id}>{ex.name}</option>
                 ))}
@@ -116,29 +118,29 @@ export const Dashboard = () => {
               className="px-6 py-2.5 bg-gradient-to-br from-cq-coral to-cq-amber text-cq-on-accent rounded-xl transition duration-300 font-semibold flex items-center gap-2 shadow-cq-accent hover:brightness-110"
             >
               <PlayCircle className="w-4 h-4" />
-              继续练习（第 {progressInfo.currentIndex + 1} 题）
+              {t('dashboard.continuePractice', { n: progressInfo.currentIndex + 1 })}
             </Link>
           ) : (
             <Link to="/practice" className="px-6 py-2.5 bg-cq-panel hover:bg-cq-panel2 text-cq-ink rounded-xl transition duration-300 font-medium flex items-center gap-2 border border-cq-line">
               <BookOpen className="w-4 h-4 text-cq-acc" />
-              开始刷题
+              {t('dashboard.startPractice')}
             </Link>
           )}
           <Link to="/exam" className="px-6 py-2.5 bg-gradient-to-br from-cq-coral to-cq-amber text-cq-on-accent rounded-xl transition duration-300 font-semibold flex items-center gap-2 shadow-cq-accent hover:brightness-110">
             <Target className="w-4 h-4" />
-            全真模拟
+            {t('dashboard.mockExam')}
           </Link>
         </div>
       </header>
 
-      {/* 学习概览：正确率圆环 + 真实指标 */}
+      {/* Overview: progress ring + real metrics */}
       <div className="bg-cq-surface border border-cq-line rounded-2xl p-6 md:p-7 shadow-cq-card">
         <div className="flex items-center justify-between mb-5">
-          <span className="font-display font-bold text-cq-ink">学习概览 · Overview</span>
+          <span className="font-display font-bold text-cq-ink">{t('dashboard.overview')}</span>
           <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-cq-acc-soft text-cq-acc">{currentExamName}</span>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-5 items-center">
-          {/* 刷题进度圆环（当前考试） */}
+          {/* Practice progress ring (current exam) */}
           <div className="flex flex-col items-center gap-2 md:items-start">
             <div className="relative w-[104px] h-[104px] flex-none mx-auto md:mx-0">
               <svg width="104" height="104" viewBox="0 0 132 132">
@@ -148,20 +150,20 @@ export const Dashboard = () => {
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
                 <div className="font-display text-2xl font-bold text-cq-ink">{progressPercent}%</div>
-                <div className="text-[10.5px] text-cq-faint font-semibold">刷题进度</div>
+                <div className="text-[10.5px] text-cq-faint font-semibold">{t('dashboard.practiceProgress')}</div>
               </div>
             </div>
             <div className="text-xs text-cq-sub font-medium text-center md:text-left max-w-[160px]">
               {progressInfo.examName ? `${progressInfo.examName} · ` : ''}
-              已答 <span className="font-mono text-cq-ink">{progressInfo.answered}/{progressInfo.total}</span>
+              {tr('dashboard.answered', { count: <span className="font-mono text-cq-ink">{progressInfo.answered}/{progressInfo.total}</span> })}
             </div>
           </div>
-          {/* 指标 chips */}
+          {/* Metric chips */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {[
-              { Icon: Percent, val: `${avgAccuracy}%`, label: '平均正确率 Avg', color: 'text-cq-acc' },
-              { Icon: CheckCircle, val: passCount, label: '通过次数 ≥70%', color: 'text-cq-ok' },
-              { Icon: TrendingUp, val: `${latestAccuracy}%`, label: '最近一次 Latest', color: 'text-cq-gold' },
+              { Icon: Percent, val: `${avgAccuracy}%`, label: t('dashboard.avgAccuracy'), color: 'text-cq-acc' },
+              { Icon: CheckCircle, val: passCount, label: t('dashboard.passCount'), color: 'text-cq-ok' },
+              { Icon: TrendingUp, val: `${latestAccuracy}%`, label: t('dashboard.latest'), color: 'text-cq-gold' },
             ].map(({ Icon, val, label, color }) => (
               <div key={label} className="flex items-center gap-3 bg-cq-panel border border-cq-line rounded-xl px-4 py-3.5">
                 <Icon className={`w-6 h-6 flex-none ${color}`} />
@@ -175,113 +177,113 @@ export const Dashboard = () => {
         </div>
       </div>
 
-      {/* 统计卡片 */}
+      {/* Stat cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-cq-surface border border-cq-line rounded-2xl p-6 shadow-cq-card flex items-center gap-4 hover:border-cq-acc transition duration-300">
-          <div className="w-14 h-14 rounded-full bg-cq-acc-soft flex items-center justify-center">
+          <div className="w-14 h-14 flex-none rounded-full bg-cq-acc-soft flex items-center justify-center">
             <TrendingUp className="w-7 h-7 text-cq-acc" />
           </div>
           <div>
-            <p className="text-sm text-cq-sub font-medium">参加模考次数</p>
+            <p className="text-sm text-cq-sub font-medium">{t('dashboard.testsTaken')}</p>
             <p className="font-mono text-2xl font-bold text-cq-ink">{totalTests}</p>
           </div>
         </div>
         <div className="bg-cq-surface border border-cq-line rounded-2xl p-6 shadow-cq-card flex items-center gap-4 hover:border-cq-ok transition duration-300">
-          <div className="w-14 h-14 rounded-full bg-cq-ok-soft flex items-center justify-center">
+          <div className="w-14 h-14 flex-none rounded-full bg-cq-ok-soft flex items-center justify-center">
             <Target className="w-7 h-7 text-cq-ok" />
           </div>
           <div>
-            <p className="text-sm text-cq-sub font-medium">历史最高得分</p>
+            <p className="text-sm text-cq-sub font-medium">{t('dashboard.bestScore')}</p>
             <p className="font-mono text-2xl font-bold text-cq-ink">{highestScore}</p>
           </div>
         </div>
-        {/* 错题本快捷入口 */}
+        {/* Wrong-answer book shortcut */}
         <Link
           to="/wrong-answers"
           className="bg-cq-surface border border-cq-line rounded-2xl p-6 shadow-cq-card flex items-center gap-4 hover:border-cq-bad transition duration-300 cursor-pointer"
         >
-          <div className="w-14 h-14 rounded-full bg-cq-bad-soft flex items-center justify-center">
+          <div className="w-14 h-14 flex-none rounded-full bg-cq-bad-soft flex items-center justify-center">
             <XCircle className="w-7 h-7 text-cq-bad" />
           </div>
           <div>
-            <p className="text-sm text-cq-sub font-medium">错题本</p>
-            <p className="font-mono text-2xl font-bold text-cq-ink">{wrongCount} 道</p>
+            <p className="text-sm text-cq-sub font-medium">{t('dashboard.wrongBook')}</p>
+            <p className="text-sm text-cq-sub font-medium">{tr('dashboard.wrongCount', { n: <span className="font-mono text-2xl font-bold text-cq-ink">{wrongCount}</span> })}</p>
           </div>
         </Link>
         <div className="bg-cq-surface border border-cq-line rounded-2xl p-6 shadow-cq-card flex items-center gap-4">
-          <div className="w-14 h-14 rounded-full bg-cq-gold-soft flex items-center justify-center">
+          <div className="w-14 h-14 flex-none rounded-full bg-cq-gold-soft flex items-center justify-center">
             <Clock className="w-7 h-7 text-cq-gold" />
           </div>
           <div>
-            <p className="text-sm text-cq-sub font-medium">账号状态</p>
-            <p className="text-lg font-bold text-cq-ink">{user?.role === 'Admin' ? '管理员' : '正式学员'}</p>
+            <p className="text-sm text-cq-sub font-medium">{t('dashboard.accountStatus')}</p>
+            <p className="text-lg font-bold text-cq-ink">{user?.role === 'Admin' ? t('dashboard.roleAdmin') : t('dashboard.roleMember')}</p>
           </div>
         </div>
       </div>
 
-      {/* 练习进度横幅（有进度时显示） */}
+      {/* Unfinished-practice banner (shown when there is progress) */}
       {progressInfo.hasProgress && (
         <div className="bg-cq-ok-soft border border-cq-ok rounded-2xl p-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <PlayCircle className="w-6 h-6 text-cq-ok flex-shrink-0" />
             <div>
-              <p className="text-cq-ok font-semibold">你有未完成的练习{progressInfo.examName ? `（${progressInfo.examName}）` : ''}</p>
-              <p className="text-cq-sub text-sm">上次停在第 {progressInfo.currentIndex + 1} 题，点击继续上次的进度。</p>
+              <p className="text-cq-ok font-semibold">{progressInfo.examName ? t('dashboard.unfinishedWithExam', { exam: progressInfo.examName }) : t('dashboard.unfinished')}</p>
+              <p className="text-cq-sub text-sm">{t('dashboard.stoppedAt', { n: progressInfo.currentIndex + 1 })}</p>
             </div>
           </div>
           <Link
             to="/practice"
             className="flex items-center gap-2 px-4 py-2 bg-cq-ok hover:bg-cq-ok text-white rounded-xl transition font-medium text-sm"
           >
-            继续
+            {t('common.continue')}
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       )}
 
-      {/* 模考历史记录 */}
+      {/* Mock exam history */}
       <div className="bg-cq-surface border border-cq-line rounded-2xl shadow-cq-card overflow-hidden">
         <div className="px-6 py-5 border-b border-cq-line">
-          <h3 className="font-display text-lg font-semibold text-cq-ink">答题历史记录</h3>
+          <h3 className="font-display text-lg font-semibold text-cq-ink">{t('dashboard.historyTitle')}</h3>
         </div>
         <div className="p-6">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cq-acc mb-4"></div>
-              <p className="text-cq-sub">加载记录中...</p>
+              <p className="text-cq-sub">{t('dashboard.loadingHistory')}</p>
             </div>
           ) : error ? (
             <div className="flex items-center gap-2 text-cq-bad bg-cq-bad-soft p-4 rounded-xl">
               <AlertCircle className="w-5 h-5" />
-              {error}
+              {t(error)}
             </div>
           ) : history.length === 0 ? (
             <div className="text-center py-12">
               <div className="w-16 h-16 bg-cq-panel rounded-full flex items-center justify-center mx-auto mb-4">
                 <BookOpen className="w-8 h-8 text-cq-faint" />
               </div>
-              <h4 className="text-lg font-medium text-cq-ink mb-2">暂无模考记录</h4>
-              <p className="text-cq-faint mb-6">您还没有完成过任何模拟考试。现在就去验证一下所学知识吧！</p>
+              <h4 className="text-lg font-medium text-cq-ink mb-2">{t('dashboard.noHistoryTitle')}</h4>
+              <p className="text-cq-faint mb-6">{t('dashboard.noHistoryDesc')}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-cq-line">
                 <thead>
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-cq-sub uppercase tracking-wider">模考时间</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-cq-sub uppercase tracking-wider">得分</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-cq-sub uppercase tracking-wider">正确率</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-cq-sub uppercase tracking-wider">评级</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-cq-sub uppercase tracking-wider">{t('dashboard.colTime')}</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-cq-sub uppercase tracking-wider">{t('dashboard.colScore')}</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-cq-sub uppercase tracking-wider">{t('dashboard.colAccuracy')}</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-cq-sub uppercase tracking-wider">{t('dashboard.colRating')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-cq-line">
                   {history.map((record) => {
                     const a = record.total > 0 ? Math.round((record.score / record.total) * 100) : null;
-                    const rating = a == null ? '—' : a >= 80 ? '优秀' : a >= 60 ? '良好' : '需努力';
+                    const rating = a == null ? '—' : a >= 80 ? t('dashboard.ratingExcellent') : a >= 60 ? t('dashboard.ratingGood') : t('dashboard.ratingKeepGoing');
                     return (
                       <tr key={record.id} className="hover:bg-cq-panel2 transition">
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-cq-sub">
-                          {new Date(record.createdAt).toLocaleString()}
+                          {new Date(record.createdAt).toLocaleString(locale)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full bg-cq-acc-soft text-cq-acc font-mono">

@@ -1,11 +1,13 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useI18n } from '../context/I18nContext';
 import { BookOpen, User, LogOut, CheckSquare, Crown, XCircle, Sun, Moon } from 'lucide-react';
 
 export const Navbar = () => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { t, toggleLang } = useI18n();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -28,9 +30,17 @@ export const Navbar = () => {
 
           <div className="flex items-center gap-4">
             <button
+              onClick={toggleLang}
+              title={t('nav.toggleLang')}
+              aria-label={t('nav.toggleLang')}
+              className="h-9 min-w-9 px-2 rounded-lg border border-cq-line bg-cq-panel text-cq-sub hover:text-cq-ink text-sm font-semibold flex items-center justify-center transition"
+            >
+              {t('nav.langButton')}
+            </button>
+            <button
               onClick={toggleTheme}
-              title="切换深浅色 Toggle theme"
-              aria-label="切换深浅色"
+              title={t('nav.toggleTheme')}
+              aria-label={t('nav.toggleTheme')}
               className="w-9 h-9 rounded-lg border border-cq-line bg-cq-panel text-cq-sub hover:text-cq-ink flex items-center justify-center transition"
             >
               {theme === 'dark' ? <Moon className="h-[18px] w-[18px]" /> : <Sun className="h-[18px] w-[18px]" />}
@@ -38,17 +48,17 @@ export const Navbar = () => {
             {user ? (
               <>
                 <Link to="/practice" className="text-cq-sub hover:text-cq-ink transition flex items-center gap-1 text-sm font-medium">
-                  <CheckSquare className="h-4 w-4" /> 刷题
+                  <CheckSquare className="h-4 w-4" /> {t('nav.practice')}
                 </Link>
                 <Link to="/exam" className="text-cq-sub hover:text-cq-ink transition flex items-center gap-1 text-sm font-medium">
-                  <BookOpen className="h-4 w-4" /> 模考
+                  <BookOpen className="h-4 w-4" /> {t('nav.exam')}
                 </Link>
                 <Link to="/wrong-answers" className="text-cq-bad hover:text-cq-bad transition flex items-center gap-1 text-sm font-medium">
-                  <XCircle className="h-4 w-4" /> 错题本
+                  <XCircle className="h-4 w-4" /> {t('nav.wrongBook')}
                 </Link>
                 {user.role === 'Admin' && (
                   <Link to="/admin" className="text-cq-acc hover:text-cq-gold transition flex items-center gap-1 text-sm font-medium">
-                    <Crown className="h-4 w-4" /> 管理面板
+                    <Crown className="h-4 w-4" /> {t('nav.admin')}
                   </Link>
                 )}
                 <div className="h-6 w-px bg-cq-line mx-2"></div>
@@ -56,14 +66,14 @@ export const Navbar = () => {
                   <User className="h-4 w-4 text-cq-sub" />
                   <span className="text-sm text-cq-ink">{user.username}</span>
                 </Link>
-                <button onClick={handleLogout} className="p-2 text-cq-sub hover:text-cq-bad transition" title="Logout">
+                <button onClick={handleLogout} className="p-2 text-cq-sub hover:text-cq-bad transition" title={t('nav.logout')}>
                   <LogOut className="h-5 w-5" />
                 </button>
               </>
             ) : (
               <>
-                <Link to="/login" className="text-cq-sub hover:text-cq-ink text-sm font-medium transition">登录</Link>
-                <Link to="/register" className="bg-gradient-to-br from-cq-coral to-cq-amber text-cq-on-accent px-4 py-2 rounded-lg text-sm font-semibold shadow-cq-accent transition-all duration-300 hover:-translate-y-0.5 hover:brightness-110">免费注册</Link>
+                <Link to="/login" className="text-cq-sub hover:text-cq-ink text-sm font-medium transition">{t('nav.login')}</Link>
+                <Link to="/register" className="bg-gradient-to-br from-cq-coral to-cq-amber text-cq-on-accent px-4 py-2 rounded-lg text-sm font-semibold shadow-cq-accent transition-all duration-300 hover:-translate-y-0.5 hover:brightness-110">{t('nav.signup')}</Link>
               </>
             )}
           </div>

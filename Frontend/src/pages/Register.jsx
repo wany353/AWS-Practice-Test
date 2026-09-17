@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../utils/api';
+import { useI18n } from '../context/I18nContext';
 import { Mail, Lock, User, Loader2 } from 'lucide-react';
 
 export const Register = () => {
@@ -8,11 +9,12 @@ export const Register = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { t } = useI18n();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
-      setError('两次输入的密码不一致');
+      setError('register.mismatch');
       return;
     }
 
@@ -21,10 +23,11 @@ export const Register = () => {
 
     try {
       await api.post('/Auth/register', { username: formData.username, password: formData.password });
-      alert('注册成功，请重新登录！');
+      alert(t('register.success'));
       navigate('/login');
     } catch (err) {
-      setError(err.response?.data || '注册失败，用户名可能已存在');
+      // Error holds a translation key so it follows the language toggle.
+      setError(err.response?.status === 400 ? 'register.exists' : 'register.failed');
     } finally {
       setLoading(false);
     }
@@ -39,19 +42,19 @@ export const Register = () => {
 
         <div className="relative bg-cq-surface backdrop-blur-xl border border-cq-line rounded-2xl p-8 shadow-cq-card">
           <div className="text-center mb-8">
-            <h1 className="font-display text-3xl font-bold text-cq-ink tracking-tight">创建账号</h1>
-            <p className="text-sm text-cq-sub mt-2">开启您的 AWS 备考之旅</p>
+            <h1 className="font-display text-3xl font-bold text-cq-ink tracking-tight">{t('register.title')}</h1>
+            <p className="text-sm text-cq-sub mt-2">{t('register.subtitle')}</p>
           </div>
 
           {error && (
             <div className="mb-6 p-4 bg-cq-bad-soft border border-cq-bad rounded-lg text-cq-bad text-sm flex gap-2 items-center">
-              <span className="block sm:inline">{error}</span>
+              <span className="block sm:inline">{t(error)}</span>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-cq-sub mb-2">用户名</label>
+              <label className="block text-sm font-medium text-cq-sub mb-2">{t('common.username')}</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <User className="h-5 w-5 text-cq-faint" />
@@ -60,7 +63,7 @@ export const Register = () => {
                   type="text"
                   required
                   className="w-full pl-10 pr-4 py-3 bg-cq-panel border border-cq-line rounded-xl text-cq-ink placeholder-cq-faint focus:outline-none focus:ring-2 focus:ring-cq-acc focus:border-transparent transition-all duration-300"
-                  placeholder="选择一个好记的用户名"
+                  placeholder={t('register.usernamePlaceholder')}
                   value={formData.username}
                   onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                 />
@@ -68,7 +71,7 @@ export const Register = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-cq-sub mb-2">密码</label>
+              <label className="block text-sm font-medium text-cq-sub mb-2">{t('common.password')}</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Lock className="h-5 w-5 text-cq-faint" />
@@ -77,7 +80,7 @@ export const Register = () => {
                   type="password"
                   required
                   className="w-full pl-10 pr-4 py-3 bg-cq-panel border border-cq-line rounded-xl text-cq-ink placeholder-cq-faint focus:outline-none focus:ring-2 focus:ring-cq-acc focus:border-transparent transition-all duration-300"
-                  placeholder="至少6位密码"
+                  placeholder={t('register.passwordPlaceholder')}
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 />
@@ -85,7 +88,7 @@ export const Register = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-cq-sub mb-2">确认密码</label>
+              <label className="block text-sm font-medium text-cq-sub mb-2">{t('register.confirmPassword')}</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Lock className="h-5 w-5 text-cq-faint" />
@@ -94,7 +97,7 @@ export const Register = () => {
                   type="password"
                   required
                   className="w-full pl-10 pr-4 py-3 bg-cq-panel border border-cq-line rounded-xl text-cq-ink placeholder-cq-faint focus:outline-none focus:ring-2 focus:ring-cq-acc focus:border-transparent transition-all duration-300"
-                  placeholder="再次输入密码"
+                  placeholder={t('register.confirmPlaceholder')}
                   value={formData.confirmPassword}
                   onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                 />
@@ -109,14 +112,14 @@ export const Register = () => {
               {loading ? (
                 <Loader2 className="animate-spin h-5 w-5" />
               ) : (
-                '立即注册'
+                t('register.submit')
               )}
             </button>
 
             <p className="text-center text-sm text-cq-sub">
-              已经有账号了？{' '}
+              {t('register.hasAccount')}{' '}
               <Link to="/login" className="font-medium text-cq-acc hover:text-cq-gold transition-colors">
-                直接登录
+                {t('register.loginLink')}
               </Link>
             </p>
           </form>

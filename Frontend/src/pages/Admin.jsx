@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../utils/api';
+import { useI18n } from '../context/I18nContext';
+import { hasRealAnalysis } from '../utils/analysis';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
@@ -11,14 +13,15 @@ import {
 
 const PAGE_SIZE = 20;
 
-// ========== 上传题库区域 ==========
+// ========== Upload question bank ==========
 const UploadSection = () => {
+  const { t, tr } = useI18n();
   const [fileContent, setFileContent] = useState(null);
   const [fileName, setFileName] = useState('');
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState(null);
 
-  // 考试（题库分类）选择
+  // Exam (question bank category) selection
   const [exams, setExams] = useState([]);
   const [examMode, setExamMode] = useState('existing'); // 'existing' | 'new'
   const [selectedExamId, setSelectedExamId] = useState('');
@@ -60,7 +63,7 @@ const UploadSection = () => {
         const json = JSON.parse(rawText);
         setFileContent(json);
       } catch {
-        setStatus({ type: 'error', message: '不是合法的 JSON 文件' });
+        setStatus({ type: 'error', key: 'admin.upload.invalidJson' });
         setFileContent(null);
       }
     };
@@ -70,7 +73,7 @@ const UploadSection = () => {
   const handleUpload = async () => {
     if (!fileContent) return;
     if (!resolvedExamName) {
-      setStatus({ type: 'error', message: '请先选择或填写考试名称' });
+      setStatus({ type: 'error', key: 'admin.upload.selectExamFirst' });
       return;
     }
     setLoading(true);
@@ -78,7 +81,7 @@ const UploadSection = () => {
     try {
       const questions = fileContent.map((item) => {
         let type = 'Single';
-        // 兼容 correct_answer(数组 ["A","C"])与 answer(字符串 "A"/"A, C")
+        // Accept correct_answer (array ["A","C"]) or answer (string "A" / "A, C")
         const rawAns = item.correct_answer ?? item.answer ?? '';
         const cleanAnswer = (Array.isArray(rawAns) ? rawAns.join('') : String(rawAns))
           .toUpperCase().replace(/[^A-Z]/g, '');
@@ -90,15 +93,15 @@ const UploadSection = () => {
           }
         }
         return {
-          content: item.question || '无题目内容',
+          content: item.question || t('admin.upload.noContent'),
           answer: cleanAnswer,
           type: type,
           optionsJson: JSON.stringify(optionsList),
-          analysis: `【相关主题】: ${item.topic || 'N/A'}\n该题目暂未提供详细的思路解析。`
+          analysis: '', // no placeholder text: an empty explanation reads as "no explanation" in every language
         };
       });
       const { data } = await api.post('/Questions/import', { examName: resolvedExamName, questions });
-      setStatus({ type: 'success', message: data.message || `已成功导入 ${questions.length} 道题目到「${resolvedExamName}」。` });
+      setStatus({ type: 'success', key: 'admin.upload.success', vars: { count: questions.length, exam: resolvedExamName } });
       setFileContent(null);
       setFileName('');
       setNewExamName('');
@@ -106,7 +109,7 @@ const UploadSection = () => {
       if (data.examId) { setSelectedExamId(String(data.examId)); setExamMode('existing'); }
     } catch (err) {
       console.error(err);
-      setStatus({ type: 'error', message: err.response?.data?.title || err.response?.data || '导入失败，请检查数据格式与网络' });
+      setStatus({ type: 'error', key: 'admin.upload.failed' });
     } finally {
       setLoading(false);
     }
@@ -118,14 +121,14 @@ const UploadSection = () => {
       <div className="absolute bottom-0 left-0 w-64 h-64 bg-cq-acc-soft rounded-full filter blur-3xl translate-y-1/2 -translate-x-1/2 pointer-events-none" />
       <div className="relative z-10">
         <UploadCloud className="w-16 h-16 text-cq-acc mx-auto mb-4" />
-        <h2 className="font-display text-2xl font-bold text-cq-ink mb-2">上传题库</h2>
+        <h2 className="font-display text-2xl font-bold text-cq-ink mb-2">{t('admin.upload.title')}</h2>
         <p className="text-cq-sub mb-8 max-w-xl mx-auto text-sm">
-          选择或新建一个考试，再上传结构化 <code className="text-cq-acc bg-cq-acc-soft px-1.5 py-0.5 rounded font-mono">aws_questions.json</code> 题库文件。<span className="text-cq-faint">仅替换该考试下的题目，其它考试不受影响。</span>
+          {tr('admin.upload.desc', { file: <code className="text-cq-acc bg-cq-acc-soft px-1.5 py-0.5 rounded font-mono">aws_questions.json</code> })}{' '}<span className="text-cq-faint">{t('admin.upload.replaceNote')}</span>
         </p>
 
-        {/* 考试选择 */}
+        {/* Exam selection */}
         <div className="max-w-md mx-auto text-left mb-6">
-          <label className="block text-sm font-semibold text-cq-sub mb-2">考试 / Exam</label>
+          <label className="block text-sm font-semibold text-cq-sub mb-2">{t('admin.upload.examLabel')}</label>
           <select
             value={examMode === 'new' ? '__new__' : selectedExamId}
             onChange={(e) => {
@@ -136,16 +139,16 @@ const UploadSection = () => {
             className="cq-select w-full"
           >
             {exams.map((ex) => (
-              <option key={ex.id} value={ex.id}>{ex.name}（{ex.questionCount} 题）</option>
+              <option key={ex.id} value={ex.id}>{t('admin.upload.examOption', { name: ex.name, count: ex.questionCount })}</option>
             ))}
-            <option value="__new__">＋ 新建考试…</option>
+            <option value="__new__">{t('admin.upload.newExam')}</option>
           </select>
           {examMode === 'new' && (
             <input
               type="text"
               value={newExamName}
               onChange={(e) => setNewExamName(e.target.value)}
-              placeholder="输入新考试名称，如 SAA-C03"
+              placeholder={t('admin.upload.newExamPlaceholder')}
               className="w-full mt-3 px-4 py-3 rounded-xl bg-cq-panel border border-cq-line text-cq-ink placeholder-cq-faint focus:outline-none focus:ring-2 focus:ring-cq-acc focus:border-transparent transition"
             />
           )}
@@ -160,9 +163,9 @@ const UploadSection = () => {
           />
           <div className="pointer-events-none">
             <p className="text-base font-medium text-cq-sub group-hover:text-cq-acc">
-              {fileName ? fileName : '点击或拖拽上传 JSON 文件'}
+              {fileName ? fileName : t('admin.upload.dropHint')}
             </p>
-            {!fileName && <p className="text-sm text-cq-faint mt-1">支持 .json 格式</p>}
+            {!fileName && <p className="text-sm text-cq-faint mt-1">{t('admin.upload.jsonOnly')}</p>}
           </div>
         </div>
         <button
@@ -171,7 +174,7 @@ const UploadSection = () => {
           className="px-10 py-3.5 bg-gradient-to-br from-cq-coral to-cq-amber text-cq-on-accent font-bold rounded-xl transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-cq-accent hover:brightness-110 flex items-center justify-center gap-2 mx-auto"
         >
           {loading ? <Loader className="animate-spin w-5 h-5" /> : <UploadCloud className="w-5 h-5" />}
-          {loading ? '导入中...' : `导入到「${resolvedExamName || '…'}」`}
+          {loading ? t('admin.upload.importing') : t('admin.upload.importInto', { exam: resolvedExamName || '…' })}
         </button>
         {status && (
           <div className={`mt-6 p-4 rounded-xl border flex items-start gap-3 text-left ${
@@ -181,8 +184,8 @@ const UploadSection = () => {
           }`}>
             {status.type === 'success' ? <CheckCircle className="w-5 h-5 shrink-0 mt-0.5" /> : <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />}
             <div>
-              <h4 className="font-bold text-sm">{status.type === 'success' ? '操作成功' : '操作失败'}</h4>
-              <p className="opacity-90 mt-0.5 text-sm">{status.message}</p>
+              <h4 className="font-bold text-sm">{status.type === 'success' ? t('admin.upload.opSuccess') : t('admin.upload.opFailed')}</h4>
+              <p className="opacity-90 mt-0.5 text-sm">{t(status.key, status.vars)}</p>
             </div>
           </div>
         )}
@@ -191,8 +194,9 @@ const UploadSection = () => {
   );
 };
 
-// ========== 解析管理区域 ==========
+// ========== Explanation manager ==========
 const AnalysisManager = () => {
+  const { t, tr } = useI18n();
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -201,12 +205,12 @@ const AnalysisManager = () => {
   const [savingId, setSavingId] = useState(null);
   const [saveStatus, setSaveStatus] = useState({}); // { [id]: 'success' | 'error' }
   const [preview, setPreview] = useState(false);
-  // 考试筛选（与上传/练习保持一致）
+  // Exam filter (consistent with upload/practice)
   const [exams, setExams] = useState([]);
-  const [examFilter, setExamFilter] = useState(''); // '' = 全部考试
+  const [examFilter, setExamFilter] = useState(''); // '' = all exams
   const [examsLoaded, setExamsLoaded] = useState(false);
 
-  // 加载考试列表，默认选中上次的考试（cq-exam）或第一个
+  // Load exams; default to the last used exam (cq-exam) or the first
   useEffect(() => {
     api.get('/Categories')
       .then(({ data }) => {
@@ -220,7 +224,7 @@ const AnalysisManager = () => {
       .finally(() => setExamsLoaded(true));
   }, []);
 
-  // 按考试筛选加载题目
+  // Load questions for the selected exam
   useEffect(() => {
     if (!examsLoaded) return;
     let cancelled = false;
@@ -231,7 +235,7 @@ const AnalysisManager = () => {
         const { data } = await api.get('/Questions', { params });
         if (!cancelled) { setQuestions(data); setPage(0); }
       } catch (err) {
-        console.error('加载题目失败', err);
+        console.error('Failed to load questions', err);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -245,16 +249,16 @@ const AnalysisManager = () => {
     try { if (id) localStorage.setItem('cq-exam', String(id)); } catch { /* ignore */ }
   };
 
-  // ===== 批量导入解析 =====
+  // ===== Bulk-import explanations =====
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState(null);
 
   const handleImportAnalysis = (e) => {
     const file = e.target.files[0];
-    e.target.value = '';           // 允许重复选择同一文件
+    e.target.value = '';           // allow re-selecting the same file
     if (!file) return;
     if (!examFilter) {
-      setImportResult({ type: 'error', message: '请先在上方选择一个具体考试（不能是「全部考试」）' });
+      setImportResult({ type: 'error', key: 'admin.analysis.selectSpecificExam' });
       return;
     }
     setImportResult(null);
@@ -265,10 +269,10 @@ const AnalysisManager = () => {
         raw = JSON.parse(ev.target.result);
         if (!Array.isArray(raw)) throw new Error('not array');
       } catch {
-        setImportResult({ type: 'error', message: '不是合法的 JSON 数组文件' });
+        setImportResult({ type: 'error', key: 'admin.analysis.invalidJsonArray' });
         return;
       }
-      // 兼容 correct_answer / correctAnswer、explanation / analysis
+      // Accept correct_answer / correctAnswer and explanation / analysis
       const items = raw.map((it) => ({
         number: Number(it.number ?? it.index ?? 0),
         correctAnswer: String(it.correct_answer ?? it.correctAnswer ?? it.answer ?? ''),
@@ -276,7 +280,7 @@ const AnalysisManager = () => {
       })).filter((it) => it.number > 0 && it.explanation);
 
       if (items.length === 0) {
-        setImportResult({ type: 'error', message: '文件中没有可用的解析（需要 number + explanation 字段）' });
+        setImportResult({ type: 'error', key: 'admin.analysis.noUsableItems' });
         return;
       }
 
@@ -287,13 +291,19 @@ const AnalysisManager = () => {
           skipMismatch: true,
           items,
         });
-        setImportResult({ type: 'success', message: data.message, detail: data });
-        // 重新拉取列表，刷新「已有解析」统计
+        setImportResult({
+          type: 'success',
+          key: data.mismatch > 0 ? 'admin.analysis.importSummaryMismatch' : 'admin.analysis.importSummary',
+          vars: { updated: data.updated, mismatch: data.mismatch },
+          detail: data,
+        });
+        // Reload the list to refresh the "has explanation" counts
         const params = examFilter ? { categoryId: examFilter } : {};
         const res = await api.get('/Questions', { params });
         setQuestions(res.data);
       } catch (err) {
-        setImportResult({ type: 'error', message: err.response?.data || '导入失败，请检查文件格式与网络' });
+        // The only 400 the client can still trigger (empty items are rejected above) is an exam with no questions.
+        setImportResult({ type: 'error', key: err.response?.status === 400 ? 'admin.analysis.noQuestionsInExam' : 'admin.analysis.importFailed' });
       } finally {
         setImporting(false);
       }
@@ -320,7 +330,7 @@ const AnalysisManager = () => {
     setSavingId(id);
     try {
       await api.patch(`/Questions/${id}/analysis`, { analysis: editContent });
-      // 本地同步更新
+      // Update local state to match
       setQuestions(prev => prev.map(q => q.id === id ? { ...q, analysis: editContent } : q));
       setSaveStatus(prev => ({ ...prev, [id]: 'success' }));
       setEditingId(null);
@@ -333,14 +343,11 @@ const AnalysisManager = () => {
     }
   };
 
-  const hasRealAnalysis = (analysis) =>
-    analysis && !analysis.includes('该题目暂未提供详细的思路解析');
-
   if (loading) {
     return (
       <div className="flex justify-center items-center py-16">
         <Loader className="animate-spin w-8 h-8 text-cq-acc" />
-        <span className="ml-3 text-cq-sub">加载题目列表...</span>
+        <span className="ml-3 text-cq-sub">{t('admin.analysis.loading')}</span>
       </div>
     );
   }
@@ -349,40 +356,40 @@ const AnalysisManager = () => {
     return (
       <div className="text-center py-16 text-cq-faint">
         <FileText className="w-12 h-12 mx-auto mb-3 opacity-40" />
-        <p>暂无题目，请先上传题库文件。</p>
+        <p>{t('admin.analysis.empty')}</p>
       </div>
     );
   }
 
   return (
     <div>
-      {/* 统计栏 */}
+      {/* Stats bar */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-4 text-sm text-cq-sub">
           {exams.length > 0 && (
             <select value={examFilter} onChange={(e) => changeFilter(e.target.value)} className="cq-select">
-              <option value="">全部考试</option>
+              <option value="">{t('common.allExams')}</option>
               {exams.map((ex) => (
                 <option key={ex.id} value={ex.id}>{ex.name}</option>
               ))}
             </select>
           )}
-          <span>共 <span className="text-cq-ink font-semibold font-mono">{questions.length}</span> 题</span>
+          <span>{tr('admin.analysis.total', { n: <span className="text-cq-ink font-semibold font-mono">{questions.length}</span> })}</span>
           <span className="flex items-center gap-1.5">
             <CheckCircle2 className="w-4 h-4 text-cq-ok" />
-            已有解析 <span className="text-cq-ok font-semibold">{questions.filter(q => hasRealAnalysis(q.analysis)).length}</span>
+            {t('admin.analysis.hasAnalysis')} <span className="text-cq-ok font-semibold">{questions.filter(q => hasRealAnalysis(q.analysis)).length}</span>
           </span>
           <span className="flex items-center gap-1.5">
             <Circle className="w-4 h-4 text-cq-faint" />
-            待补充 <span className="text-cq-ink font-semibold">{questions.filter(q => !hasRealAnalysis(q.analysis)).length}</span>
+            {t('admin.analysis.missing')} <span className="text-cq-ink font-semibold">{questions.filter(q => !hasRealAnalysis(q.analysis)).length}</span>
           </span>
           <label className={`relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${
             importing || !examFilter
               ? 'border-cq-line bg-cq-panel text-cq-faint cursor-not-allowed'
               : 'border-cq-acc bg-cq-acc-soft text-cq-acc cursor-pointer hover:brightness-110'
-          }`} title={examFilter ? '批量导入解析 JSON' : '请先选择具体考试'}>
+          }`} title={examFilter ? t('admin.analysis.bulkImportTitle') : t('admin.analysis.selectExamFirstShort')}>
             {importing ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <UploadCloud className="w-3.5 h-3.5" />}
-            {importing ? '导入中…' : '批量导入解析'}
+            {importing ? t('admin.analysis.importing') : t('admin.analysis.bulkImport')}
             <input
               type="file"
               accept=".json"
@@ -392,7 +399,7 @@ const AnalysisManager = () => {
             />
           </label>
         </div>
-        {/* 分页 */}
+        {/* Pagination */}
         <div className="flex items-center gap-2">
           <button
             onClick={() => setPage(p => Math.max(0, p - 1))}
@@ -414,7 +421,7 @@ const AnalysisManager = () => {
         </div>
       </div>
 
-      {/* 批量导入结果 */}
+      {/* Bulk-import result */}
       {importResult && (
         <div className={`mb-5 p-4 rounded-xl border flex items-start gap-3 ${
           importResult.type === 'success'
@@ -425,20 +432,20 @@ const AnalysisManager = () => {
             ? <CheckCircle className="w-5 h-5 shrink-0 mt-0.5" />
             : <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />}
           <div className="flex-1 min-w-0">
-            <h4 className="font-bold text-sm">{importResult.type === 'success' ? '导入完成' : '导入失败'}</h4>
-            <p className="opacity-90 mt-0.5 text-sm">{String(importResult.message)}</p>
+            <h4 className="font-bold text-sm">{importResult.type === 'success' ? t('admin.analysis.importDone') : t('admin.analysis.importFailedTitle')}</h4>
+            <p className="opacity-90 mt-0.5 text-sm">{t(importResult.key, importResult.vars)}</p>
             {importResult.detail && (
               <div className="mt-2 text-xs text-cq-sub flex flex-wrap gap-x-4 gap-y-1 font-mono">
-                <span>文件 {importResult.detail.total} 条</span>
-                <span>题库 {importResult.detail.dbCount} 题</span>
-                <span className="text-cq-ok">已更新 {importResult.detail.updated}</span>
-                {importResult.detail.mismatch > 0 && <span className="text-cq-bad">答案不匹配跳过 {importResult.detail.mismatch}</span>}
-                {importResult.detail.outOfRange > 0 && <span className="text-cq-faint">超出范围 {importResult.detail.outOfRange}</span>}
+                <span>{t('admin.analysis.statFile', { n: importResult.detail.total })}</span>
+                <span>{t('admin.analysis.statBank', { n: importResult.detail.dbCount })}</span>
+                <span className="text-cq-ok">{t('admin.analysis.statUpdated', { n: importResult.detail.updated })}</span>
+                {importResult.detail.mismatch > 0 && <span className="text-cq-bad">{t('admin.analysis.statMismatch', { n: importResult.detail.mismatch })}</span>}
+                {importResult.detail.outOfRange > 0 && <span className="text-cq-faint">{t('admin.analysis.statOutOfRange', { n: importResult.detail.outOfRange })}</span>}
               </div>
             )}
             {importResult.detail?.mismatchSample?.length > 0 && (
               <p className="mt-1.5 text-xs text-cq-faint">
-                不匹配题号示例：{importResult.detail.mismatchSample.join(', ')}
+                {t('admin.analysis.mismatchSample', { list: importResult.detail.mismatchSample.join(', ') })}
                 {importResult.detail.mismatch > importResult.detail.mismatchSample.length ? ' …' : ''}
               </p>
             )}
@@ -447,13 +454,13 @@ const AnalysisManager = () => {
         </div>
       )}
 
-      {/* 题目列表 */}
+      {/* Question list */}
       <div className="space-y-3">
         {pageQuestions.map((q, localIdx) => {
           const isEditing = editingId === q.id;
           const hasAnalysis = hasRealAnalysis(q.analysis);
           const status = saveStatus[q.id];
-          const seq = page * PAGE_SIZE + localIdx + 1; // 考试内顺序号（非数据库 ID）
+          const seq = page * PAGE_SIZE + localIdx + 1; // Position within the exam (not the database ID)
 
           return (
             <div
@@ -464,38 +471,38 @@ const AnalysisManager = () => {
                   : 'border-cq-line bg-cq-panel hover:border-cq-faint'
               }`}
             >
-              {/* 题目头 */}
+              {/* Question header */}
               <div className="flex items-start gap-3 p-4">
-                {/* 序号 + 状态点 */}
+                {/* Number + status dot */}
                 <div className="flex flex-col items-center gap-1 flex-shrink-0 pt-0.5">
-                  <span className="text-xs font-mono text-cq-faint leading-none" title={`数据库 ID: ${q.id}`}>#{seq}</span>
+                  <span className="text-xs font-mono text-cq-faint leading-none" title={t('admin.analysis.dbId', { id: q.id })}>#{seq}</span>
                   <div className={`w-2 h-2 rounded-full mt-1 ${hasAnalysis ? 'bg-cq-ok' : 'bg-cq-faint'}`}
-                    title={hasAnalysis ? '已有解析' : '暂无解析'} />
+                    title={hasAnalysis ? t('admin.analysis.hasAnalysis') : t('admin.analysis.noAnalysis')} />
                 </div>
 
-                {/* 题目内容摘要 */}
+                {/* Question summary */}
                 <div className="flex-1 min-w-0">
                   <p className="text-cq-sub text-sm leading-snug line-clamp-2">{q.content}</p>
                   <div className="flex items-center gap-3 mt-1.5">
                     <span className="text-xs px-2 py-0.5 rounded bg-cq-panel text-cq-faint font-mono">{q.type}</span>
-                    <span className="text-xs text-cq-faint">答案：<span className="font-mono text-cq-sub">{q.answer}</span></span>
+                    <span className="text-xs text-cq-faint">{tr('admin.analysis.answer', { answer: <span className="font-mono text-cq-sub">{q.answer}</span> })}</span>
                     {hasAnalysis
-                      ? <span className="text-xs text-cq-ok flex items-center gap-0.5"><CheckCircle2 className="w-3 h-3" /> 已有解析</span>
-                      : <span className="text-xs text-cq-faint">暂无解析</span>
+                      ? <span className="text-xs text-cq-ok flex items-center gap-0.5"><CheckCircle2 className="w-3 h-3" /> {t('admin.analysis.hasAnalysis')}</span>
+                      : <span className="text-xs text-cq-faint">{t('admin.analysis.noAnalysis')}</span>
                     }
                   </div>
                 </div>
 
-                {/* 操作按钮 */}
+                {/* Actions */}
                 <div className="flex-shrink-0 flex items-center gap-2">
                   {status === 'success' && (
                     <span className="text-xs text-cq-ok flex items-center gap-1 animate-fade-in">
-                      <CheckCircle className="w-3.5 h-3.5" /> 已保存
+                      <CheckCircle className="w-3.5 h-3.5" /> {t('admin.analysis.saved')}
                     </span>
                   )}
                   {status === 'error' && (
                     <span className="text-xs text-cq-bad flex items-center gap-1 animate-fade-in">
-                      <AlertCircle className="w-3.5 h-3.5" /> 保存失败
+                      <AlertCircle className="w-3.5 h-3.5" /> {t('admin.analysis.saveFailed')}
                     </span>
                   )}
                   {!isEditing ? (
@@ -504,33 +511,33 @@ const AnalysisManager = () => {
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-cq-acc-soft hover:bg-cq-acc-soft text-cq-acc border border-cq-acc transition"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
-                      {hasAnalysis ? '编辑解析' : '添加解析'}
+                      {hasAnalysis ? t('admin.analysis.editAnalysis') : t('admin.analysis.addAnalysis')}
                     </button>
                   ) : (
                     <button
                       onClick={cancelEdit}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-cq-panel hover:bg-cq-panel2 text-cq-sub transition"
                     >
-                      <X className="w-3.5 h-3.5" /> 取消
+                      <X className="w-3.5 h-3.5" /> {t('common.cancel')}
                     </button>
                   )}
                 </div>
               </div>
 
-              {/* 展开的编辑区 */}
+              {/* Expanded editor */}
               {isEditing && (
                 <div className="border-t border-cq-line p-4 space-y-3 animate-fade-in">
-                  {/* 切换编辑/预览 */}
+                  {/* Edit / preview toggle */}
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-semibold text-cq-sub uppercase tracking-wider">
-                      解析内容（支持 Markdown）
+                      {t('admin.analysis.contentLabel')}
                     </span>
                     <button
                       onClick={() => setPreview(v => !v)}
                       className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg bg-cq-panel hover:bg-cq-panel2 text-cq-sub transition"
                     >
                       <BookOpen className="w-3.5 h-3.5" />
-                      {preview ? '返回编辑' : '预览'}
+                      {preview ? t('admin.analysis.backToEdit') : t('admin.analysis.preview')}
                     </button>
                   </div>
 
@@ -539,7 +546,7 @@ const AnalysisManager = () => {
                       value={editContent}
                       onChange={e => setEditContent(e.target.value)}
                       rows={10}
-                      placeholder={`在此输入 Markdown 格式的解析内容...\n\n例如：\n## 解析思路\n\n正确答案是 **A**，原因如下：\n\n- AWS S3 是对象存储服务\n- 适合存储静态文件\n\n> 参考：AWS 官方文档`}
+                      placeholder={t('admin.analysis.placeholder')}
                       className="w-full bg-cq-panel border border-cq-line rounded-xl px-4 py-3 text-sm text-cq-ink placeholder-cq-faint focus:outline-none focus:border-cq-acc focus:ring-1 focus:ring-cq-acc resize-none font-mono leading-relaxed transition"
                     />
                   ) : (
@@ -559,7 +566,7 @@ const AnalysisManager = () => {
                           </ReactMarkdown>
                         </div>
                       ) : (
-                        <p className="text-cq-faint text-sm italic">（内容为空）</p>
+                        <p className="text-cq-faint text-sm italic">{t('admin.analysis.emptyContent')}</p>
                       )}
                     </div>
                   )}
@@ -571,8 +578,8 @@ const AnalysisManager = () => {
                       className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold bg-gradient-to-br from-cq-coral to-cq-amber text-cq-on-accent transition disabled:opacity-50 disabled:cursor-not-allowed shadow-cq-accent hover:brightness-110"
                     >
                       {savingId === q.id
-                        ? <><Loader className="animate-spin w-4 h-4" /> 保存中...</>
-                        : <><Save className="w-4 h-4" /> 保存解析</>
+                        ? <><Loader className="animate-spin w-4 h-4" /> {t('admin.analysis.saving')}</>
+                        : <><Save className="w-4 h-4" /> {t('admin.analysis.saveAnalysis')}</>
                       }
                     </button>
                   </div>
@@ -583,7 +590,7 @@ const AnalysisManager = () => {
         })}
       </div>
 
-      {/* 底部分页 */}
+      {/* Bottom pagination */}
       {totalPages > 1 && (
         <div className="flex justify-center items-center gap-3 mt-6 pt-6 border-t border-cq-line">
           <button
@@ -591,15 +598,15 @@ const AnalysisManager = () => {
             disabled={page === 0}
             className="flex items-center gap-1 px-4 py-2 rounded-lg text-sm bg-cq-panel hover:bg-cq-panel2 disabled:opacity-30 text-cq-sub transition"
           >
-            <ChevronLeft className="w-4 h-4" /> 上一页
+            <ChevronLeft className="w-4 h-4" /> {t('admin.analysis.prevPage')}
           </button>
-          <span className="text-sm text-cq-faint">第 {page + 1} 页 / 共 {totalPages} 页</span>
+          <span className="text-sm text-cq-faint">{t('admin.analysis.pageOf', { page: page + 1, total: totalPages })}</span>
           <button
             onClick={() => { setPage(p => Math.min(totalPages - 1, p + 1)); setEditingId(null); }}
             disabled={page >= totalPages - 1}
             className="flex items-center gap-1 px-4 py-2 rounded-lg text-sm bg-cq-panel hover:bg-cq-panel2 disabled:opacity-30 text-cq-sub transition"
           >
-            下一页 <ChevronRight className="w-4 h-4" />
+            {t('admin.analysis.nextPage')} <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       )}
@@ -607,18 +614,19 @@ const AnalysisManager = () => {
   );
 };
 
-// ========== 主页面 ==========
+// ========== Main page ==========
 export const Admin = () => {
+  const { t } = useI18n();
   const [activeTab, setActiveTab] = useState('analysis');
 
   return (
     <div className="max-w-4xl mx-auto py-10 px-4 sm:px-6 animate-fade-in-up">
       <div className="mb-8">
-        <h1 className="font-display text-3xl font-bold text-cq-ink mb-1">管理员面板</h1>
-        <p className="text-cq-faint text-sm">题库管理 · 解析编辑</p>
+        <h1 className="font-display text-3xl font-bold text-cq-ink mb-1">{t('admin.title')}</h1>
+        <p className="text-cq-faint text-sm">{t('admin.subtitle')}</p>
       </div>
 
-      {/* 标签页导航 */}
+      {/* Tabs */}
       <div className="flex gap-2 mb-6 bg-cq-surface border border-cq-line rounded-2xl p-1.5">
         <button
           onClick={() => setActiveTab('analysis')}
@@ -629,7 +637,7 @@ export const Admin = () => {
           }`}
         >
           <BookOpen className="w-4 h-4" />
-          解析管理
+          {t('admin.tabAnalysis')}
         </button>
         <button
           onClick={() => setActiveTab('upload')}
@@ -640,11 +648,11 @@ export const Admin = () => {
           }`}
         >
           <UploadCloud className="w-4 h-4" />
-          上传题库
+          {t('admin.tabUpload')}
         </button>
       </div>
 
-      {/* 内容区 */}
+      {/* Content */}
       {activeTab === 'upload' && <UploadSection />}
       {activeTab === 'analysis' && (
         <div className="bg-cq-surface backdrop-blur-md border border-cq-line rounded-3xl p-6 sm:p-8 shadow-cq-card">
@@ -653,8 +661,8 @@ export const Admin = () => {
               <Edit3 className="w-5 h-5 text-cq-acc" />
             </div>
             <div>
-              <h2 className="font-display text-xl font-bold text-cq-ink">题目解析管理</h2>
-              <p className="text-cq-faint text-xs mt-0.5">为每道题目编写 Markdown 格式解析，绿色圆点表示已有解析</p>
+              <h2 className="font-display text-xl font-bold text-cq-ink">{t('admin.analysisTitle')}</h2>
+              <p className="text-cq-faint text-xs mt-0.5">{t('admin.analysisDesc')}</p>
             </div>
           </div>
           <AnalysisManager />

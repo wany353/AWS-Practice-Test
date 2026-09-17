@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '../utils/api';
+import { useI18n } from '../context/I18nContext';
+import { hasRealAnalysis } from '../utils/analysis';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
@@ -9,7 +11,7 @@ import {
   RefreshCw, RotateCcw
 } from 'lucide-react';
 
-// 防抖 Hook
+// Debounce hook
 function useDebounce(value, delay) {
   const [debouncedValue, setDebouncedValue] = useState(value);
   useEffect(() => {
@@ -19,7 +21,7 @@ function useDebounce(value, delay) {
   return debouncedValue;
 }
 
-// 答案比较（忽略顺序）
+// Compare answers (order-insensitive)
 function isAnswerCorrect(userAnswerArr, correctAnswer) {
   if (!correctAnswer) return false;
   const userLetters = userAnswerArr.map(opt => opt.substring(0, 1)).sort().join('');
@@ -28,8 +30,9 @@ function isAnswerCorrect(userAnswerArr, correctAnswer) {
 }
 
 
-// ====== 开始选择弹窗 ======
+// ====== Start-mode modal ======
 const StartModal = ({ progress, onContinue, onRestart }) => {
+  const { t, tr } = useI18n();
   const hasProgress = progress &&
     (progress.currentIndex > 0 || (progress.answersJson && progress.answersJson !== '{}'));
 
@@ -45,8 +48,8 @@ const StartModal = ({ progress, onContinue, onRestart }) => {
             <BookOpen className="w-6 h-6 text-cq-acc" />
           </div>
           <div>
-            <h2 className="font-display text-xl font-bold text-cq-ink">欢迎回来</h2>
-            <p className="text-cq-sub text-sm">请选择练习方式</p>
+            <h2 className="font-display text-xl font-bold text-cq-ink">{t('practice.welcomeBack')}</h2>
+            <p className="text-cq-sub text-sm">{t('practice.chooseMode')}</p>
           </div>
         </div>
 
@@ -58,10 +61,12 @@ const StartModal = ({ progress, onContinue, onRestart }) => {
             >
               <PlayCircle className="w-8 h-8 text-cq-ok flex-shrink-0" />
               <div>
-                <p className="font-semibold text-cq-ok">继续上次练习</p>
+                <p className="font-semibold text-cq-ok">{t('practice.continueLast')}</p>
                 <p className="text-sm text-cq-sub mt-0.5">
-                  从第 <span className="text-cq-ok font-bold">{progress.currentIndex + 1}</span> 题继续
-                  &nbsp;·&nbsp;已完成 <span className="text-cq-ok font-bold">{answeredCount}</span> 题
+                  {tr('practice.continueDetail', {
+                    n: <span className="text-cq-ok font-bold">{progress.currentIndex + 1}</span>,
+                    count: <span className="text-cq-ok font-bold">{answeredCount}</span>,
+                  })}
                 </p>
               </div>
               <ArrowRight className="w-5 h-5 text-cq-faint group-hover:text-cq-ok ml-auto transition" />
@@ -70,8 +75,8 @@ const StartModal = ({ progress, onContinue, onRestart }) => {
             <div className="w-full flex items-center gap-4 p-4 rounded-xl border border-cq-line bg-cq-panel text-left opacity-60 cursor-not-allowed">
               <PlayCircle className="w-8 h-8 text-cq-faint flex-shrink-0" />
               <div>
-                <p className="font-semibold text-cq-sub">继续上次练习</p>
-                <p className="text-sm text-cq-faint mt-0.5">暂无练习记录</p>
+                <p className="font-semibold text-cq-sub">{t('practice.continueLast')}</p>
+                <p className="text-sm text-cq-faint mt-0.5">{t('practice.noProgress')}</p>
               </div>
             </div>
           )}
@@ -82,8 +87,8 @@ const StartModal = ({ progress, onContinue, onRestart }) => {
           >
             <RefreshCw className="w-8 h-8 text-cq-acc flex-shrink-0" />
             <div>
-              <p className="font-semibold text-cq-acc">重新开始</p>
-              <p className="text-sm text-cq-sub mt-0.5">从第 1 题重新刷题，清空所有进度</p>
+              <p className="font-semibold text-cq-acc">{t('practice.restart')}</p>
+              <p className="text-sm text-cq-sub mt-0.5">{t('practice.restartDesc')}</p>
             </div>
             <ArrowRight className="w-5 h-5 text-cq-faint group-hover:text-cq-acc ml-auto transition" />
           </button>
@@ -93,38 +98,39 @@ const StartModal = ({ progress, onContinue, onRestart }) => {
   );
 };
 
-// ====== 主组件 ======
+// ====== Main component ======
 export const PracticeMode = () => {
+  const { t, tr } = useI18n();
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // 考试（题库分类）
+  // Exams (question bank categories)
   const [exams, setExams] = useState([]);
   const [categoryId, setCategoryId] = useState('');
 
-  // 已提交的答案 { [questionIndex]: string[] }
+  // Submitted answers { [questionIndex]: string[] }
   const [answers, setAnswers] = useState({});
-  // 当前题目正在选择（未提交）的选项
+  // Options currently selected (not yet submitted) for this question
   const [pendingSelection, setPendingSelection] = useState([]);
-  // 已提交题目集合 { [questionIndex]: true }
+  // Set of submitted questions { [questionIndex]: true }
   const [submitted, setSubmitted] = useState({});
-  // 自动保存状态
+  // Auto-save status (translation key)
   const [saveStatus, setSaveStatus] = useState('');
 
-  // 弹窗状态
+  // Modal state
   const [showModal, setShowModal] = useState(false);
   const [savedProgress, setSavedProgress] = useState(null);
 
-  // 防止组件重挂载时空值覆盖服务器进度
+  // Prevents empty state from overwriting server progress on remount
   const readyToSave = useRef(false);
 
-  // 防抖
+  // Debounce
   const debouncedIndex = useDebounce(currentIndex, 1500);
   const debouncedAnswers = useDebounce(answers, 1500);
 
-  // 加载考试列表，默认选中上次的考试（cq-exam），否则第一个
+  // Load exams; default to the last used exam (cq-exam), otherwise the first
   useEffect(() => {
     api.get('/Categories')
       .then(({ data }) => {
@@ -140,17 +146,17 @@ export const PracticeMode = () => {
       .catch(() => setLoading(false));
   }, []);
 
-  // 切换考试：记住选择
+  // Switch exam and remember the choice
   const selectExam = (id) => {
     setCategoryId(id);
     try { localStorage.setItem('cq-exam', String(id)); } catch { /* ignore */ }
   };
 
-  // 按所选考试加载题目 + 该考试自己的进度，并弹出“继续/重新开始”选择
+  // Load the selected exam's questions + its own progress, then show the continue/restart modal
   useEffect(() => {
     if (!categoryId) return;
     let cancelled = false;
-    readyToSave.current = false; // 加载期间暂停自动保存
+    readyToSave.current = false; // Pause auto-save while loading
     const fetchAll = async () => {
       setLoading(true);
       setError('');
@@ -166,7 +172,7 @@ export const PracticeMode = () => {
           options: JSON.parse(q.optionsJson)
         }));
         setQuestions(parsed);
-        // 加载/切换考试后，先清空本地作答状态（等用户在弹窗里选择继续或重来）
+        // After loading/switching exams, clear local answer state until the user picks continue or restart
         setCurrentIndex(0);
         setAnswers({});
         setSubmitted({});
@@ -174,7 +180,7 @@ export const PracticeMode = () => {
         setSavedProgress(progressRes?.data || null);
         setShowModal(true);
       } catch (err) {
-        if (!cancelled) setError('加载题库失败，请检查网络或联系管理员导入题目。');
+        if (!cancelled) setError('practice.loadFailed');
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -183,7 +189,7 @@ export const PracticeMode = () => {
     return () => { cancelled = true; };
   }, [categoryId]);
 
-  // 自动保存进度（仅在用户做出选择后才激活，按考试分别保存）
+  // Auto-save progress (only after the user has chosen; saved per exam)
   useEffect(() => {
     if (questions.length === 0 || !readyToSave.current || !categoryId) return;
     const save = async () => {
@@ -193,19 +199,19 @@ export const PracticeMode = () => {
           currentIndex: debouncedIndex,
           answersJson: JSON.stringify(debouncedAnswers)
         });
-        setSaveStatus('已自动保存');
+        setSaveStatus('practice.autoSaved');
         setTimeout(() => setSaveStatus(''), 2000);
-      } catch { /* 静默失败 */ }
+      } catch { /* fail silently */ }
     };
     save();
   }, [debouncedIndex, debouncedAnswers]);
 
-  // 切换题目时重置 pending 选择
+  // Reset pending selection when the question changes
   useEffect(() => {
     setPendingSelection([]);
   }, [currentIndex]);
 
-  // ===== 弹窗回调 =====
+  // ===== Modal callbacks =====
   const handleContinue = () => {
     if (savedProgress) {
       const idx = savedProgress.currentIndex || 0;
@@ -217,7 +223,7 @@ export const PracticeMode = () => {
       setSubmitted(submittedMap);
     }
     setShowModal(false);
-    // 等待防抖值更新完毕后再允许自动保存（防抖1.5s + 缓冲0.5s）
+    // Wait for debounced values to settle before enabling auto-save (1.5s debounce + 0.5s buffer)
     setTimeout(() => { readyToSave.current = true; }, 2000);
   };
 
@@ -227,12 +233,12 @@ export const PracticeMode = () => {
     setSubmitted({});
     setPendingSelection([]);
     setShowModal(false);
-    // 重新开始直接允许保存（空值是正确的）
+    // Restart can save immediately (empty state is correct)
     readyToSave.current = true;
-    // 清空该考试的服务器端进度
+    // Clear this exam's progress on the server
     try {
       await api.post('/PracticeProgress', { categoryId: Number(categoryId), currentIndex: 0, answersJson: '{}' });
-    } catch { /* 静默失败 */ }
+    } catch { /* fail silently */ }
   };
 
   const currentQ = questions[currentIndex];
@@ -264,11 +270,11 @@ export const PracticeMode = () => {
           questionId: currentQ.id,
           userAnswerJson: JSON.stringify(pendingSelection)
         });
-      } catch { /* 静默失败 */ }
+      } catch { /* fail silently */ }
     }
   };
 
-  // 重做当前题目
+  // Redo the current question
   const handleRedo = () => {
     setPendingSelection([]);
     setSubmitted(prev => {
@@ -315,7 +321,7 @@ export const PracticeMode = () => {
     return 'border-cq-faint';
   };
 
-  // ===== 渲染 =====
+  // ===== Render =====
   if (loading) {
     return (
       <div className="flex justify-center items-center py-20 min-h-[60vh]">
@@ -328,8 +334,8 @@ export const PracticeMode = () => {
     return (
       <div className="flex flex-col items-center justify-center py-20 min-h-[60vh] text-center">
         <AlertCircle className="w-16 h-16 text-cq-gold mb-4" />
-        <h2 className="font-display text-2xl font-bold text-cq-ink mb-2">{error || '题库为空'}</h2>
-        <p className="text-cq-sub">目前系统里还没有题目，请联系管理员上传题库。</p>
+        <h2 className="font-display text-2xl font-bold text-cq-ink mb-2">{error ? t(error) : t('practice.emptyBank')}</h2>
+        <p className="text-cq-sub">{t('practice.emptyBankDesc')}</p>
       </div>
     );
   }
@@ -340,7 +346,7 @@ export const PracticeMode = () => {
 
   return (
     <>
-      {/* 开始选择弹窗 */}
+      {/* Start-mode modal */}
       {showModal && (
         <StartModal
           progress={savedProgress}
@@ -350,11 +356,11 @@ export const PracticeMode = () => {
       )}
 
       <div className="max-w-4xl mx-auto animate-fade-in-up pb-20">
-        {/* 顶部进度 */}
+        {/* Top progress */}
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-3">
             <h1 className="font-display text-2xl font-bold text-cq-ink flex items-center gap-2">
-              练习模式
+              {t('practice.title')}
               <span className="font-mono text-sm px-3 py-1 bg-cq-acc-soft text-cq-acc rounded-full">
                 {currentIndex + 1} / {questions.length}
               </span>
@@ -363,7 +369,7 @@ export const PracticeMode = () => {
               <select
                 value={categoryId}
                 onChange={(e) => selectExam(e.target.value)}
-                title="切换考试"
+                title={t('common.switchExam')}
                 className="cq-select"
               >
                 {exams.map((ex) => (
@@ -372,13 +378,13 @@ export const PracticeMode = () => {
               </select>
             )}
             {saveStatus && (
-              <span className="text-xs text-cq-ok animate-fade-in">{saveStatus}</span>
+              <span className="text-xs text-cq-ok animate-fade-in">{t(saveStatus)}</span>
             )}
           </div>
           <div className="flex gap-2">
             <button
               onClick={() => setShowModal(true)}
-              title="返回选择界面"
+              title={t('practice.backToModes')}
               className="p-2 bg-cq-panel hover:bg-cq-panel2 text-cq-sub hover:text-cq-ink rounded-lg transition"
             >
               <RefreshCw className="w-4 h-4" />
@@ -400,7 +406,7 @@ export const PracticeMode = () => {
           </div>
         </div>
 
-        {/* 题目卡片 */}
+        {/* Question card */}
         <div className="bg-cq-surface backdrop-blur-xl border border-cq-line rounded-2xl p-6 md:p-8 shadow-cq-card relative overflow-hidden">
           <div className="absolute top-0 right-0 bg-gradient-to-br from-cq-coral to-cq-amber text-cq-on-accent font-mono text-xs font-bold px-4 py-1.5 rounded-bl-xl shadow-lg">
             {currentQ.type}
@@ -410,7 +416,7 @@ export const PracticeMode = () => {
             {currentQ.content}
           </div>
 
-          {/* 选项列表 */}
+          {/* Options */}
           <div className="space-y-3">
             {currentQ.options.map((opt, idx) => (
               <button
@@ -435,7 +441,7 @@ export const PracticeMode = () => {
             ))}
           </div>
 
-          {/* 提交区域 */}
+          {/* Submit area */}
           <div className="mt-8 pt-6 border-t border-cq-line">
             {!isSubmitted ? (
               <button
@@ -444,40 +450,41 @@ export const PracticeMode = () => {
                 className="w-full py-3 rounded-xl font-semibold text-cq-on-accent transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed bg-gradient-to-br from-cq-coral to-cq-amber hover:brightness-110 shadow-cq-accent flex items-center justify-center gap-2"
               >
                 <BookOpen className="w-5 h-5" />
-                提交答案
+                {t('practice.submit')}
               </button>
             ) : (
               <div className="space-y-4">
-                {/* 对错反馈卡 */}
+                {/* Correct/incorrect feedback */}
                 <div className={`flex items-center gap-3 p-4 rounded-xl border ${correctResult ? 'bg-cq-ok-soft border-cq-ok' : 'bg-cq-bad-soft border-cq-bad'}`}>
                   {correctResult ? (
                     <>
                       <CheckCircle className="w-7 h-7 text-cq-ok flex-shrink-0" />
                       <div>
-                        <p className="font-bold text-cq-ok">回答正确！</p>
-                        <p className="text-sm text-cq-sub">正确答案：<span className="text-cq-ok font-mono">{currentQ.answer}</span></p>
+                        <p className="font-bold text-cq-ok">{t('practice.correct')}</p>
+                        <p className="text-sm text-cq-sub">{tr('common.correctAnswerIs', { answer: <span className="text-cq-ok font-mono">{currentQ.answer}</span> })}</p>
                       </div>
                     </>
                   ) : (
                     <>
                       <XCircle className="w-7 h-7 text-cq-bad flex-shrink-0" />
                       <div>
-                        <p className="font-bold text-cq-bad">回答错误，已记入错题本</p>
+                        <p className="font-bold text-cq-bad">{t('practice.wrong')}</p>
                         <p className="text-sm text-cq-sub">
-                          你的答案：<span className="text-cq-bad font-mono">{(answers[currentIndex] || []).map(a => a.substring(0, 1)).sort().join(', ')}</span>
-                          正确答案：<span className="text-cq-ok font-mono">{currentQ.answer}</span>
+                          {tr('practice.yourAnswerIs', { answer: <span className="text-cq-bad font-mono">{(answers[currentIndex] || []).map(a => a.substring(0, 1)).sort().join(', ')}</span> })}
+                          {' '}
+                          {tr('common.correctAnswerIs', { answer: <span className="text-cq-ok font-mono">{currentQ.answer}</span> })}
                         </p>
                       </div>
                     </>
                   )}
                 </div>
 
-                {/* 解析 */}
-                {currentQ.analysis && (
+                {/* Explanation */}
+                {hasRealAnalysis(currentQ.analysis) && (
                   <div className="p-5 bg-cq-surface border border-cq-line rounded-xl text-sm">
                     <h4 className="font-bold text-cq-acc mb-3 flex items-center gap-2">
                       <BookOpen className="w-4 h-4" />
-                      详细解析
+                      {t('practice.detailedExplanation')}
                     </h4>
                     <div className="prose prose-sm prose-invert max-w-none
                       prose-p:text-cq-sub prose-p:leading-relaxed prose-p:my-1
@@ -496,30 +503,30 @@ export const PracticeMode = () => {
                   </div>
                 )}
 
-                {/* 操作按钮行 */}
+                {/* Action buttons */}
                 <div className="flex gap-3">
-                  {/* 重做此题 */}
+                  {/* Redo */}
                   <button
                     onClick={handleRedo}
                     className="flex-1 py-3 rounded-xl font-semibold text-cq-sub transition-all duration-300 bg-cq-panel hover:bg-cq-panel2 flex items-center justify-center gap-2"
                   >
                     <RotateCcw className="w-4 h-4" />
-                    重做此题
+                    {t('practice.redo')}
                   </button>
 
-                  {/* 下一题 */}
+                  {/* Next question */}
                   {currentIndex < questions.length - 1 ? (
                     <button
                       onClick={goNext}
                       className="flex-1 py-3 rounded-xl font-semibold text-cq-ink transition-all duration-300 bg-cq-panel hover:bg-cq-panel2 flex items-center justify-center gap-2"
                     >
-                      下一题
+                      {t('practice.next')}
                       <ArrowRight className="w-5 h-5" />
                     </button>
                   ) : (
                     <div className="flex-1 text-center py-3 text-cq-ok font-semibold flex items-center justify-center gap-2">
                       <CheckCircle className="w-5 h-5" />
-                      已完成全部 {questions.length} 题！
+                      {t('practice.allDone', { n: questions.length })}
                     </div>
                   )}
                 </div>
@@ -528,7 +535,7 @@ export const PracticeMode = () => {
           </div>
         </div>
 
-        {/* 底部颜色进度条 */}
+        {/* Colored progress bar */}
         <div className="mt-8 flex gap-1 h-2">
           {questions.map((_, idx) => {
             const isDone = submitted[idx];
@@ -545,25 +552,25 @@ export const PracticeMode = () => {
                         : 'bg-cq-bad-soft hover:bg-cq-bad'
                   }`}
                 onClick={() => setCurrentIndex(idx)}
-                title={`第 ${idx + 1} 题`}
+                title={t('common.questionN', { n: idx + 1 })}
               />
             );
           })}
         </div>
 
-        {/* 底部统计 */}
+        {/* Bottom stats */}
         <div className="mt-4 flex justify-center gap-6 text-sm text-cq-faint">
           <span className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-cq-ok inline-block" />
-            答对 {Object.keys(submitted).filter(k => isAnswerCorrect(answers[k] || [], questions[k]?.answer)).length}
+            {t('practice.countCorrect', { n: Object.keys(submitted).filter(k => isAnswerCorrect(answers[k] || [], questions[k]?.answer)).length })}
           </span>
           <span className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-cq-bad inline-block" />
-            答错 {Object.keys(submitted).filter(k => !isAnswerCorrect(answers[k] || [], questions[k]?.answer)).length}
+            {t('practice.countWrong', { n: Object.keys(submitted).filter(k => !isAnswerCorrect(answers[k] || [], questions[k]?.answer)).length })}
           </span>
           <span className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-cq-faint inline-block" />
-            未答 {questions.length - Object.keys(submitted).length}
+            {t('practice.countUnanswered', { n: questions.length - Object.keys(submitted).length })}
           </span>
         </div>
       </div>

@@ -1,16 +1,19 @@
 import { useState, useEffect } from 'react';
 import api from '../utils/api';
+import { useI18n } from '../context/I18nContext';
+import { hasRealAnalysis } from '../utils/analysis';
 import { Trash2, RefreshCw, AlertCircle, Loader2, BookOpen, CheckCircle, XCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const WrongAnswers = () => {
+  const { t, tr } = useI18n();
   const [wrongList, setWrongList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [expanded, setExpanded] = useState({});
   const [removing, setRemoving] = useState({});
   const [exams, setExams] = useState([]);
-  const [examFilter, setExamFilter] = useState(''); // '' = 全部考试
+  const [examFilter, setExamFilter] = useState(''); // '' = all exams
 
   useEffect(() => {
     api.get('/Categories').then(({ data }) => setExams(data)).catch(() => {});
@@ -29,7 +32,7 @@ export const WrongAnswers = () => {
       }));
       setWrongList(parsed);
     } catch {
-      setError('无法加载错题本，请稍后重试。');
+      setError('wrong.loadFailed');
     } finally {
       setLoading(false);
     }
@@ -55,7 +58,7 @@ export const WrongAnswers = () => {
       await api.delete(`/WrongAnswers/${questionId}`);
       setWrongList(prev => prev.filter(w => w.questionId !== questionId));
     } catch {
-      alert('移除失败，请重试');
+      alert(t('wrong.removeFailed'));
     } finally {
       setRemoving(prev => ({ ...prev, [questionId]: false }));
     }
@@ -71,12 +74,12 @@ export const WrongAnswers = () => {
 
   return (
     <div className="max-w-4xl mx-auto animate-fade-in-up pb-20">
-      {/* 标题栏 */}
+      {/* Title bar */}
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="font-display text-3xl font-bold text-cq-ink tracking-tight">错题本</h1>
+          <h1 className="font-display text-3xl font-bold text-cq-ink tracking-tight">{t('wrong.title')}</h1>
           <p className="text-cq-sub mt-1">
-            共 <span className="text-cq-bad font-semibold">{wrongList.length}</span> 道错题
+            {tr('wrong.total', { n: <span className="text-cq-bad font-semibold">{wrongList.length}</span> })}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -86,7 +89,7 @@ export const WrongAnswers = () => {
               onChange={(e) => changeFilter(e.target.value)}
               className="cq-select"
             >
-              <option value="">全部考试</option>
+              <option value="">{t('common.allExams')}</option>
               {exams.map((ex) => (
                 <option key={ex.id} value={ex.id}>{ex.name}</option>
               ))}
@@ -97,7 +100,7 @@ export const WrongAnswers = () => {
             className="flex items-center gap-2 px-4 py-2 bg-cq-panel hover:bg-cq-panel2 text-cq-sub rounded-xl transition"
           >
             <RefreshCw className="w-4 h-4" />
-            刷新
+            {t('common.refresh')}
           </button>
         </div>
       </div>
@@ -105,7 +108,7 @@ export const WrongAnswers = () => {
       {error && (
         <div className="flex items-center gap-2 text-cq-bad bg-cq-bad-soft p-4 rounded-xl mb-6">
           <AlertCircle className="w-5 h-5" />
-          {error}
+          {t(error)}
         </div>
       )}
 
@@ -114,14 +117,14 @@ export const WrongAnswers = () => {
           <div className="w-20 h-20 rounded-full bg-cq-ok-soft flex items-center justify-center mb-4">
             <CheckCircle className="w-10 h-10 text-cq-ok" />
           </div>
-          <h2 className="font-display text-2xl font-bold text-cq-ink mb-2">错题本是空的！</h2>
-          <p className="text-cq-sub mb-6">你目前没有做错的题目，继续保持！</p>
+          <h2 className="font-display text-2xl font-bold text-cq-ink mb-2">{t('wrong.emptyTitle')}</h2>
+          <p className="text-cq-sub mb-6">{t('wrong.emptyDesc')}</p>
           <Link
             to="/practice"
             className="px-6 py-2.5 bg-gradient-to-br from-cq-coral to-cq-amber text-cq-on-accent rounded-xl transition font-semibold flex items-center gap-2 shadow-cq-accent hover:brightness-110"
           >
             <BookOpen className="w-4 h-4" />
-            去练习
+            {t('wrong.goPractice')}
           </Link>
         </div>
       ) : (
@@ -133,7 +136,7 @@ export const WrongAnswers = () => {
                 key={item.id}
                 className="bg-cq-surface backdrop-blur-xl border border-cq-bad rounded-2xl overflow-hidden shadow-cq-card transition hover:border-cq-bad"
               >
-                {/* 题目头部：可折叠 */}
+                {/* Question header (collapsible) */}
                 <button
                   onClick={() => toggleExpand(item.id)}
                   className="w-full flex items-start gap-4 p-5 text-left"
@@ -157,10 +160,10 @@ export const WrongAnswers = () => {
                   </div>
                 </button>
 
-                {/* 展开详情 */}
+                {/* Expanded details */}
                 {isExpanded && (
                   <div className="px-5 pb-5 space-y-4 border-t border-cq-line pt-4">
-                    {/* 选项列表 */}
+                    {/* Options */}
                     <div className="space-y-2">
                       {item.options.map((opt, oidx) => {
                         const isCorrect = item.answer.includes(opt.substring(0, 1));
@@ -185,27 +188,27 @@ export const WrongAnswers = () => {
                       })}
                     </div>
 
-                    {/* 答案对比 */}
+                    {/* Answer comparison */}
                     <div className="flex gap-4 text-sm">
                       <div className="flex items-center gap-2">
-                        <span className="text-cq-sub">我的答案：</span>
+                        <span className="text-cq-sub">{t('wrong.myAnswer')}</span>
                         <span className="font-mono text-cq-bad">{item.userAnswer.map(a => a.substring(0, 1)).join(', ')}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-cq-sub">正确答案：</span>
+                        <span className="text-cq-sub">{t('wrong.correctAnswer')}</span>
                         <span className="font-mono text-cq-ok">{item.answer}</span>
                       </div>
                     </div>
 
-                    {/* 解析 */}
-                    {item.analysis && (
+                    {/* Explanation */}
+                    {hasRealAnalysis(item.analysis) && (
                       <div className="p-4 bg-cq-surface border border-cq-line rounded-xl text-cq-sub text-sm leading-relaxed">
-                        <h4 className="font-bold text-cq-acc mb-1">解析：</h4>
+                        <h4 className="font-bold text-cq-acc mb-1">{t('wrong.explanation')}</h4>
                         {item.analysis}
                       </div>
                     )}
 
-                    {/* 操作 */}
+                    {/* Actions */}
                     <div className="flex justify-end">
                       <button
                         onClick={() => handleRemove(item.questionId)}
@@ -216,7 +219,7 @@ export const WrongAnswers = () => {
                           ? <Loader2 className="w-4 h-4 animate-spin" />
                           : <Trash2 className="w-4 h-4" />
                         }
-                        从错题本移除
+                        {t('wrong.remove')}
                       </button>
                     </div>
                   </div>

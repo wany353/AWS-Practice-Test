@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useI18n } from '../context/I18nContext';
 import api from '../utils/api';
 import { Mail, Lock, Loader2 } from 'lucide-react';
 
@@ -9,6 +10,7 @@ export const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
+  const { t } = useI18n();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -21,7 +23,8 @@ export const Login = () => {
       login(data.token);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data || '登录失败，请检查用户名和密码');
+      // Error holds a translation key so it follows the language toggle.
+      setError(err.response?.status === 401 ? 'login.invalid' : 'login.failed');
     } finally {
       setLoading(false);
     }
@@ -37,19 +40,19 @@ export const Login = () => {
 
         <div className="relative bg-cq-surface backdrop-blur-xl border border-cq-line rounded-2xl p-8 shadow-cq-card">
           <div className="text-center mb-8">
-            <h1 className="font-display text-3xl font-bold text-cq-ink tracking-tight">欢迎回来</h1>
-            <p className="text-sm text-cq-sub mt-2">使用您的账号登录到练习平台</p>
+            <h1 className="font-display text-3xl font-bold text-cq-ink tracking-tight">{t('login.title')}</h1>
+            <p className="text-sm text-cq-sub mt-2">{t('login.subtitle')}</p>
           </div>
 
           {error && (
             <div className="mb-6 p-4 bg-cq-bad-soft border border-cq-bad rounded-lg text-cq-bad text-sm">
-              {error}
+              {t(error)}
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-cq-sub mb-2">用户名</label>
+              <label className="block text-sm font-medium text-cq-sub mb-2">{t('common.username')}</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Mail className="h-5 w-5 text-cq-faint" />
@@ -66,7 +69,7 @@ export const Login = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-cq-sub mb-2">密码</label>
+              <label className="block text-sm font-medium text-cq-sub mb-2">{t('common.password')}</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Lock className="h-5 w-5 text-cq-faint" />
@@ -90,14 +93,14 @@ export const Login = () => {
               {loading ? (
                 <Loader2 className="animate-spin h-5 w-5" />
               ) : (
-                '登录'
+                t('login.submit')
               )}
             </button>
 
             <p className="text-center text-sm text-cq-sub">
-              还没有账号？{' '}
+              {t('login.noAccount')}{' '}
               <Link to="/register" className="font-medium text-cq-acc hover:text-cq-gold transition-colors">
-                免费注册
+                {t('login.signupLink')}
               </Link>
             </p>
           </form>

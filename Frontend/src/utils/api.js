@@ -1,11 +1,11 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: '/api', // 开发环境由 Vite proxy 转发，生产环境由 nginx 转发
+  baseURL: '/api', // Proxied by Vite in development and by nginx in production
   timeout: 10000,
 });
 
-// 请求拦截器，给所有请求带上 token
+// Request interceptor: attach the auth token to every request
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');

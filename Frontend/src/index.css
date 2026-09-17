@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ===== Cloud Control 主题 token（深/浅两套，靠 <html data-theme> 切换）===== */
+/* ===== Cloud Control theme tokens (dark + light sets, switched via <html data-theme>) ===== */
 :root,
 :root[data-theme="dark"] {
   --cq-bg:#17100A; --cq-bg2:#1E1710;
@@ -44,7 +44,7 @@
   }
 }
 
-/* 全局暖色底纹:两处径向光 + 极淡 44px 网格(顶部渐隐),随主题变量切换 */
+/* Global warm backdrop: two radial glows + a faint 44px grid (fading at the top), driven by theme variables */
 .cq-backdrop {
   position: fixed;
   inset: 0;
@@ -77,7 +77,7 @@
 ::-webkit-scrollbar-track { background: var(--cq-bg); }
 ::-webkit-scrollbar-thumb { background: var(--cq-line2); border-radius: 9999px; }
 
-/* 统一的下拉框样式：继承正文字体 + 自定义箭头 + 跟随主题 */
+/* Unified select style: inherits body font, custom caret, follows the theme */
 .cq-select {
   font-family: inherit;
   font-size: 14px;
