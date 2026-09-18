@@ -78,6 +78,19 @@ jobs:
           : "${EC2_HOST:?EC2_HOST is not configured}"
           : "${EC2_USER:?EC2_USER is not configured}"
 
+          # A trailing newline or space pasted into the secret box reaches us as
+          # part of the hostname and makes getaddrinfo fail.
+          EC2_HOST="$(printf '%s' "$EC2_HOST" | tr -d '[:space:]')"
+          EC2_USER="$(printf '%s' "$EC2_USER" | tr -d '[:space:]')"
+
+          # Secret values are masked in the log, so describe the expected shape
+          # rather than echoing what was configured.
+          if [[ "$EC2_HOST" =~ ^(https?|ssh):// || "$EC2_HOST" == *@* || "$EC2_HOST" == *:* || "$EC2_HOST" == */* ]]; then
+            echo "EC2_HOST must be a bare host, e.g. 54.1.2.3 or ec2-54-1-2-3.compute.amazonaws.com." >&2
+            echo "It must not contain a scheme (http://, ssh://), a username, a port or a path." >&2
+            exit 1
+          fi
+
           mkdir -p "$HOME/.ssh"
           chmod 700 "$HOME/.ssh"
           printf '%s\n' "$SSH_KEY" | tr -d '\r' > "$HOME/.ssh/deploy_key"
@@ -86,31 +99,30 @@ jobs:
           if ! timeout 20 ssh-keyscan -T 10 -H "$EC2_HOST" \
               > "$HOME/.ssh/known_hosts" 2>/tmp/keyscan.err; then
             cat /tmp/keyscan.err >&2
-            echo "No SSH host key from $EC2_HOST: check the address, that the instance is running, and that the security group allows port 22." >&2
+            echo "Could not read a host key over port 22. Check that EC2_HOST is the instance's current public address (it changes on stop/start without an Elastic IP), that the instance is running, and that the security group allows inbound 22." >&2
             exit 1
           fi
           test -s "$HOME/.ssh/known_hosts"
 
+          # Later steps address the box as "deploy-target", which keeps the
+          # secrets out of their command lines.
+          cat > "$HOME/.ssh/config" <<SSH_CONFIG
+          Host deploy-target
+            HostName $EC2_HOST
+            User $EC2_USER
+            IdentityFile $HOME/.ssh/deploy_key
+            BatchMode yes
+            ConnectTimeout 15
+          SSH_CONFIG
+          chmod 600 "$HOME/.ssh/config"
+
       - name: Test SSH connection
-        env:
-          TARGET: ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          ssh -i "$HOME/.ssh/deploy_key" -o BatchMode=yes -o ConnectTimeout=15 \
-            "$TARGET" 'echo "SSH ok as $(whoami) on $(hostname)"'
+        run: ssh deploy-target 'echo "SSH ok as $(whoami) on $(hostname)"'
 
       - name: Copy compose file
-        env:
-          TARGET: ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}
-        run: |
-          scp -i "$HOME/.ssh/deploy_key" -o BatchMode=yes -o ConnectTimeout=15 \
-            docker-compose.prod.yml "$TARGET:~/AWS-Practice-Test/docker-compose.prod.yml"
+        run: scp docker-compose.prod.yml deploy-target:~/AWS-Practice-Test/docker-compose.prod.yml
 
       - name: Pull images and restart
         env:
-          TARGET: ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}
           TAG: ${{ steps.tag.outputs.tag }}
-        run: |
-          ssh -i "$HOME/.ssh/deploy_key" -o BatchMode=yes -o ConnectTimeout=15 \
-            "$TARGET" "TAG='$TAG' bash -s" < scripts/deploy-remote.sh
+        run: ssh deploy-target "TAG='$TAG' bash -s" < scripts/deploy-remote.sh

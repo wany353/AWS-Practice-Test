@@ -83,9 +83,15 @@ Actions → Deploy → Run workflow → 在 `image_tag` 填入要回退到的 co
 
 | 现象 | 原因 |
 | :--- | :--- |
-| 部署卡在健康检查，日志里后端起不来 | 多半是数据库迁移失败或 `.env` 缺变量，看 `docker compose logs backend` |
+| `EC2_HOST is not configured` | Secret 没加或拼错名字 |
+| `getaddrinfo ***: Name or service not known` | `EC2_HOST` 解析不了。**实例停止再启动后公网 IP 会变**，需要更新 Secret；一劳永逸的办法是绑一个 Elastic IP |
+| `EC2_HOST must be a bare host` | Secret 里带了 `http://`、用户名、端口或路径，只填主机名或 IP |
+| `Could not read a host key over port 22` | 实例没运行、没有公网 IP、安全组没放行 22，或子网没有 Internet Gateway 路由 |
+| Test SSH connection 报 permission denied | 公钥没进 `authorized_keys`，`EC2_SSH_KEY` 粘贴时丢了首尾行，或 `EC2_USER` 与 AMI 不符（AL2023 是 `ec2-user`，Ubuntu 镜像是 `ubuntu`） |
 | `docker compose pull` 报 unauthorized | EC2 上的 GHCR 登录过期，重新 `docker login ghcr.io` |
-| SSH 步骤 permission denied | 公钥没进 `authorized_keys`，或 `EC2_SSH_KEY` 粘贴时丢了首尾行 |
+| 部署卡在健康检查，日志里后端起不来 | 多半是数据库迁移失败或 `.env` 缺变量，看 `docker compose logs backend` |
+
+失败后不用重新推代码：Actions → Deploy → **Re-run jobs** 即可重试；镜像已经在 GHCR 里了。
 
 健康检查打的是 `http://localhost/api/health`，经 nginx 反代到后端，能同时验证两个容器。
 
