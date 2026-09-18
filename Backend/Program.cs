@@ -25,10 +25,13 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Configure JWT Authentication
+// The signing key is never stored in the repo: set the JwtSettings__Secret
+// environment variable (see .env.example) or use dotnet user-secrets locally.
 var jwtSecret = builder.Configuration["JwtSettings:Secret"];
 if (string.IsNullOrEmpty(jwtSecret))
 {
-    throw new ArgumentNullException("JwtSettings:Secret is missing in configuration.");
+    throw new InvalidOperationException(
+        "JwtSettings:Secret is not configured. Set the JwtSettings__Secret environment variable.");
 }
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
