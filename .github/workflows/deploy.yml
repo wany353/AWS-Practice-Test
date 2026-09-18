@@ -16,10 +16,6 @@ concurrency:
   group: deploy-production
   cancel-in-progress: false
 
-env:
-  BACKEND_IMAGE: ghcr.io/wany353/aws-practice-test-backend
-  FRONTEND_IMAGE: ghcr.io/wany353/aws-practice-test-frontend
-
 jobs:
   build:
     # Skipped when a rollback names an image that already exists.
