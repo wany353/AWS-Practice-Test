@@ -1,0 +1,89 @@
+name: Deploy
+
+# Builds both images on GitHub's runners, pushes them to GHCR and tells the EC2
+# box to pull them. The t2.micro never builds anything itself.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Commit SHA of an image that was already built (rollback). Leave empty to build the current main.'
+        required: false
+        default: ''
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+env:
+  BACKEND_IMAGE: ghcr.io/wany353/aws-practice-test-backend
+  FRONTEND_IMAGE: ghcr.io/wany353/aws-practice-test-frontend
+
+jobs:
+  build:
+    # Skipped when a rollback names an image that already exists.
+    if: github.event_name == 'push' || inputs.image_tag == ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include:
+          - name: backend
+            context: ./Backend
+            image: ghcr.io/wany353/aws-practice-test-backend
+          - name: frontend
+            context: ./Frontend
+            image: ghcr.io/wany353/aws-practice-test-frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ matrix.image }}:${{ github.sha }}
+            ${{ matrix.image }}:latest
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+  deploy:
+    needs: build
+    if: always() && needs.build.result != 'failure' && needs.build.result != 'cancelled'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve image tag
+        id: tag
+        run: echo "tag=${{ inputs.image_tag || github.sha }}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up SSH
+        env:
+          SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Copy compose file
+        env:
+          TARGET: ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}
+        run: scp -i ~/.ssh/deploy_key docker-compose.prod.yml "$TARGET:~/AWS-Practice-Test/docker-compose.prod.yml"
+
+      - name: Pull images and restart
+        env:
+          TARGET: ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: ssh -i ~/.ssh/deploy_key "$TARGET" "TAG='$TAG' bash -s" < scripts/deploy-remote.sh

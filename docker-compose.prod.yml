@@ -1,0 +1,26 @@
+# Production compose for the EC2 box: runs prebuilt images from GHCR instead of
+# building on the instance. Deployed by .github/workflows/deploy.yml; TAG is set
+# by that workflow to the deployed commit SHA.
+services:
+  backend:
+    image: ghcr.io/wany353/aws-practice-test-backend:${TAG:-latest}
+    container_name: aws-quiz-backend
+    # Connection string and JWT signing key come from .env (never in git)
+    env_file:
+      - .env
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Production"
+      ASPNETCORE_URLS: "http://0.0.0.0:8080"
+    # Loopback only: reachable from the frontend container over the internal network
+    ports:
+      - "127.0.0.1:5264:8080"
+    restart: unless-stopped
+
+  frontend:
+    image: ghcr.io/wany353/aws-practice-test-frontend:${TAG:-latest}
+    container_name: aws-quiz-frontend
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    depends_on:
+      - backend
+    restart: unless-stopped

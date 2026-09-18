@@ -65,4 +65,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
+// Liveness probe for deployments: reachable without a token, and only answers
+// once startup (including the EF migrations above) has finished.
+app.MapGet("/api/health", () => Results.Ok(new { status = "ok" }));
+
 app.Run();

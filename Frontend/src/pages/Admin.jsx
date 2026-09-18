@@ -59,6 +59,8 @@ const UploadSection = () => {
     reader.onload = (event) => {
       try {
         let rawText = event.target.result;
+        // Some exported banks contain NUL bytes where a "fi" ligature was.
+        // eslint-disable-next-line no-control-regex
         rawText = rawText.replace(/\u0000/g, 'fi');
         const json = JSON.parse(rawText);
         setFileContent(json);

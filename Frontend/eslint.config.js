@@ -23,7 +23,15 @@ export default defineConfig([
       },
     },
     rules: {
-      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+      // Core no-unused-vars does not treat a JSX element name as a use, so
+      // component references such as `{ Icon }` are ignored by convention.
+      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]', argsIgnorePattern: '^[A-Z_]' }],
     },
+  },
+  {
+    // Context files export a provider component next to its hook. Splitting
+    // them just to satisfy fast refresh is not worth it.
+    files: ['src/context/*.jsx'],
+    rules: { 'react-refresh/only-export-components': 'off' },
   },
 ])

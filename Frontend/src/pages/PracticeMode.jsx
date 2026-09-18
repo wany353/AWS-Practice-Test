@@ -179,7 +179,7 @@ export const PracticeMode = () => {
         setPendingSelection([]);
         setSavedProgress(progressRes?.data || null);
         setShowModal(true);
-      } catch (err) {
+      } catch {
         if (!cancelled) setError('practice.loadFailed');
       } finally {
         if (!cancelled) setLoading(false);

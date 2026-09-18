@@ -68,7 +68,7 @@ export const MockExam = () => {
         setScoreResult(null);
         setTimeLeft(60 * 60);
         setPhase('idle'); // Back to the start screen after switching exams; never auto-start
-      } catch (err) {
+      } catch {
         if (!cancelled) setError('exam.loadFailed');
       } finally {
         if (!cancelled) setLoading(false);
