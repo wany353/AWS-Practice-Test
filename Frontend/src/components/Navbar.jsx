@@ -2,7 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useI18n } from '../context/I18nContext';
-import { BookOpen, User, LogOut, CheckSquare, Crown, XCircle, Sun, Moon } from 'lucide-react';
+import { BookOpen, User, LogOut, CheckSquare, Crown, XCircle, Sun, Moon, Layers } from 'lucide-react';
 
 export const Navbar = () => {
   const { user, logout } = useAuth();
@@ -47,6 +47,9 @@ export const Navbar = () => {
             </button>
             {user ? (
               <>
+                <Link to="/banks" className="text-cq-acc hover:text-cq-gold transition flex items-center gap-1.5 text-sm font-semibold">
+                  <Layers className="h-4 w-4" /> {t('nav.banks')}
+                </Link>
                 <Link to="/practice" className="text-cq-sub hover:text-cq-ink transition flex items-center gap-1 text-sm font-medium">
                   <CheckSquare className="h-4 w-4" /> {t('nav.practice')}
                 </Link>

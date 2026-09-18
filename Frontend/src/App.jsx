@@ -3,6 +3,7 @@ import { ArrowRight, Check, Layers, MessageSquare, Target, BookmarkX } from 'luc
 import { Navbar } from './components/Navbar';
 import { useI18n } from './context/I18nContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { BrowseBanks } from './pages/BrowseBanks';
 
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
@@ -37,7 +38,7 @@ const Home = () => {
             {t('home.ctaStart')}
             <ArrowRight className="w-4 h-4" />
           </Link>
-          <Link to="/practice" className="inline-flex items-center gap-2 font-semibold px-6 py-3.5 rounded-xl border border-cq-line bg-cq-panel text-cq-ink hover:bg-cq-panel2 transition">
+          <Link to="/banks" className="inline-flex items-center gap-2 font-semibold px-6 py-3.5 rounded-xl border border-cq-line bg-cq-panel text-cq-ink hover:bg-cq-panel2 transition">
             {t('home.ctaBrowse')}
           </Link>
         </div>
@@ -126,6 +127,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/banks" element={<BrowseBanks />} />
           
           {/* Protected Area (Requires Login) */}
           <Route element={<ProtectedRoute />}>
