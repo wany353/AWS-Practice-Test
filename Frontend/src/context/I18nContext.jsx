@@ -28,13 +28,24 @@ export const I18nProvider = ({ children }) => {
       if (import.meta.env.DEV) console.warn(`[i18n] missing key: ${key}`);
       return key;
     }
-    if (vars) text = text.replace(/\{(\w+)\}/g, (match, name) => (vars[name] ?? match));
+    // A placeholder with no value is left in place, so it shows up instead of
+    // silently rendering a half-empty sentence.
+    if (vars) text = text.replace(/\{(\w+)\}/g, (match, name) => {
+      if (vars[name] === undefined || vars[name] === null) {
+        if (import.meta.env.DEV) console.warn(`[i18n] no value for {${name}} in ${key}`);
+        return match;
+      }
+      return vars[name];
+    });
     return text;
   }, [lang]);
 
   // Like t(), but {name} placeholders can be React nodes (e.g. a highlighted <span>).
   const tr = useCallback((key, nodes = {}) => t(key).split(/(\{\w+\})/g).map((part, i) => {
     const name = part.match(/^\{(\w+)\}$/)?.[1];
+    if (name !== undefined && !(name in nodes) && import.meta.env.DEV) {
+      console.warn(`[i18n] no node for {${name}} in ${key}`);
+    }
     return <Fragment key={i}>{name !== undefined && name in nodes ? nodes[name] : part}</Fragment>;
   }), [t]);
 

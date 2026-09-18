@@ -2,11 +2,14 @@ import { createContext, useState, useContext } from 'react';
 
 const AuthContext = createContext();
 
+// The backend signs sub (username), uid (user id), role and jti; see
+// AuthController.GenerateJwtToken. The other names are the ones ASP.NET emits
+// when the standard claim types are used, kept as fallbacks.
 const userFromToken = (token) => {
   const payload = JSON.parse(atob(token.split('.')[1]));
   return {
-    id: payload.nameid || payload.sub,
-    username: payload.unique_name || payload.name,
+    id: payload.uid || payload.nameid,
+    username: payload.sub || payload.unique_name || payload.name,
     role: payload.role || payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']
   };
 };
